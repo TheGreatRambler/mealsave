@@ -45,6 +45,15 @@ class CurrentState extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool canRemoveIngredient(StoreIngredient ingredient) {
+    for (var recipe in recipes) {
+      for (var recipeIngredient in recipe.ingredients) {
+        if (recipeIngredient.storeIngredient == ingredient) return false;
+      }
+    }
+    return true;
+  }
+
   Future<void> removeIngredient(StoreIngredient ingredient) async {
     await recipeDatabase.deleteIngredient(ingredient);
     ingredients.remove(ingredient);
@@ -546,22 +555,23 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
     // Intelligently handle all recipe ingredients
     List<int> includedIngredients = <int>[];
     for (var ingredient in recipe.ingredients) {
+      var ingredientMap = ingredient.toMap();
+      ingredientMap["recipe"] = recipe.id;
       if (ingredient.id == null) {
-        var ingredientMap = ingredient.toMap();
-        ingredientMap["recipe"] = recipe.id;
         ingredient.id = await db?.insert("recipe_ingredients", ingredientMap);
       } else {
         // Just in case it needs updating
-        await db?.update("recipe_ingredients", ingredient.toMap(),
+        await db?.update("recipe_ingredients", ingredientMap,
             where: "_id = ?", whereArgs: [ingredient.id]);
       }
-      includedIngredients.add(ingredient.id ?? 0);
+      includedIngredients.add(ingredient.id!);
       // Not responsible for store ingredients here
     }
 
     // Remove unused recipe ingredients
     await db?.delete("recipe_ingredients",
-        where: "_id NOT IN (${includedIngredients.join(', ')})");
+        where: "_id NOT IN (${includedIngredients.join(', ')}) AND recipe = ?",
+        whereArgs: [recipe.id]);
   }
 
   Future close() async => db?.close();

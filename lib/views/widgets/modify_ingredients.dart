@@ -369,8 +369,34 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                               minimumSize:
                                                   const Size.fromHeight(60)),
                                           onPressed: () async {
-                                            await currentState.removeIngredient(
-                                                currentState.ingredient(index));
+                                            if (currentState
+                                                .canRemoveIngredient(
+                                                    currentState
+                                                        .ingredient(index))) {
+                                              await currentState
+                                                  .removeIngredient(currentState
+                                                      .ingredient(index));
+                                            } else {
+                                              await showDialog<String>(
+                                                context: context,
+                                                builder:
+                                                    (BuildContext context) =>
+                                                        AlertDialog(
+                                                  title: const Text(
+                                                      "Cannot remove ingredient"),
+                                                  content: const Text(
+                                                      "One or more recipes use this ingredient, remove this ingredient from those recipes before deleting"),
+                                                  actions: <Widget>[
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.pop(
+                                                              context),
+                                                      child: const Text("OK"),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            }
                                           },
                                           child: const Text("Delete"),
                                         )
