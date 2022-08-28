@@ -92,10 +92,10 @@ BEGIN
             VALUE "CompanyName", "com.tgrcode" "\0"
             VALUE "FileDescription", "mealsave" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "mealsave" "\0"
+            VALUE "InternalName", "MealSave" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2022 com.tgrcode. All rights reserved." "\0"
             VALUE "OriginalFilename", "mealsave.exe" "\0"
-            VALUE "ProductName", "mealsave" "\0"
+            VALUE "ProductName", "MealSave" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

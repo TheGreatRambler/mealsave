@@ -28,6 +28,11 @@ class App extends StatelessWidget {
           bodyText2: TextStyle(color: Colors.white),
         ),
       ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        /* dark theme settings */
+      ),
+      themeMode: ThemeMode.light, //ThemeMode.dark,
       home: HomePage(),
     );
   }

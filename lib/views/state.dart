@@ -103,6 +103,7 @@ class PluginAccess {
       rearCamera = CameraController(
         cameras.first,
         ResolutionPreset.low,
+        enableAudio: false,
       );
 
       rearCameraWait = rearCamera?.initialize();
@@ -415,8 +416,7 @@ class RecipeDatabase {
     //File(join(await getDatabasesPath(), path)).delete();
     db = await openDatabase(join(await getDatabasesPath(), path), version: 1,
         onCreate: (Database db, int version) async {
-      await db.execute(
-          '''
+      await db.execute('''
 CREATE TABLE IF NOT EXISTS recipes ( 
     _id integer primary key autoincrement, 
     name text not null,
@@ -425,8 +425,7 @@ CREATE TABLE IF NOT EXISTS recipes (
     thumbnail blob not null)
 ''');
 
-      await db.execute(
-          '''
+      await db.execute('''
 CREATE TABLE IF NOT EXISTS recipe_ingredients ( 
     _id integer primary key autoincrement,
     recipe integer not null,
@@ -435,8 +434,7 @@ CREATE TABLE IF NOT EXISTS recipe_ingredients (
     store_ingredient integer not null)
 ''');
 
-      await db.execute(
-          '''
+      await db.execute('''
 CREATE TABLE IF NOT EXISTS store_ingredients ( 
     _id integer primary key autoincrement, 
     name text not null,
