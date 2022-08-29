@@ -88,6 +88,47 @@ class CurrentState extends ChangeNotifier {
   StoreIngredient ingredient(int index) {
     return ingredients[index];
   }
+
+  // Retrieve some common UI elements
+  InputDecoration getTextInputDecoration(
+      BuildContext context, String hintText) {
+    return InputDecoration(
+      hintText: hintText,
+      filled: true,
+      fillColor: const Color.fromARGB(200, 255, 255, 255),
+      enabledBorder: const OutlineInputBorder(
+        borderSide: BorderSide(color: Colors.black, width: 1.0),
+      ),
+    );
+  }
+
+  InputDecoration getTextInputDecorationNormal(
+      BuildContext context, String hintText) {
+    return InputDecoration(
+      hintText: hintText,
+      enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(
+            color: Theme.of(context).brightness == Brightness.light
+                ? Colors.black
+                : Colors.white,
+            width: 1.0),
+      ),
+    );
+  }
+
+  InputDecoration getDropdownDecoration(BuildContext context, String hintText) {
+    return InputDecoration(
+      hintText: hintText,
+      filled: true,
+      fillColor: const Color.fromARGB(200, 255, 255, 255),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 20.0, vertical: 18.0),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(5.0),
+        borderSide: BorderSide(color: Colors.black, width: 1.0),
+      ),
+    );
+  }
 }
 
 class PluginAccess {
@@ -121,6 +162,7 @@ class Recipe {
 
   int getPricePerServing() {
     // The meat of the entire app
+    // Yeah there's a lot of boilerplate to get to this point
     double total = 0.0;
     for (var ingredient in ingredients) {
       total += ingredient.getPrice();
@@ -332,6 +374,7 @@ class Ingredient {
       var storeVolume = storeIngredient!.volumeType
           .fromQuantity(storeIngredient!.volumeQuantity);
       // Need consistent unit to divide, can't divide units by each other
+      // Limitation of fling_units
       var ingredientRatio =
           thisVolume.asVolume(teaspoons) / storeVolume.asVolume(teaspoons);
       return ingredientRatio * storeIngredient!.price;

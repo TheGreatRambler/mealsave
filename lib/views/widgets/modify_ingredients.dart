@@ -26,7 +26,7 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
     return Scaffold(
       appBar: AppBar(
         title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: const [
             Icon(Icons.restaurant_menu),
             SizedBox(width: 10),
@@ -77,12 +77,11 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                           initialValue: currentState
                                               .ingredient(index)
                                               .name,
-                                          decoration: const InputDecoration(
-                                              hintText: "Name",
-                                              filled: true,
-                                              fillColor: Color.fromARGB(
-                                                  200, 255, 255, 255),
-                                              border: OutlineInputBorder()),
+                                          style: const TextStyle(
+                                              color: Colors.black),
+                                          decoration: currentState
+                                              .getTextInputDecoration(
+                                                  context, "Name"),
                                           validator: (value) {
                                             if (value == null ||
                                                 value.isEmpty) {
@@ -120,22 +119,10 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                                   VolumeType>(
                                                 style: const TextStyle(
                                                     color: Colors.black),
-                                                decoration: InputDecoration(
-                                                  hintText: "Quantity Type",
-                                                  filled: true,
-                                                  fillColor:
-                                                      const Color.fromARGB(
-                                                          200, 255, 255, 255),
-                                                  contentPadding:
-                                                      const EdgeInsets
-                                                              .symmetric(
-                                                          horizontal: 20.0,
-                                                          vertical: 18.0),
-                                                  border: OutlineInputBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              5.0)),
-                                                ),
+                                                decoration: currentState
+                                                    .getDropdownDecoration(
+                                                        context,
+                                                        "Quantity Type"),
                                                 value: currentState
                                                     .ingredient(index)
                                                     .volumeType,
@@ -184,13 +171,11 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                                         .ingredient(index)
                                                         .volumeQuantity
                                                         .toStringAsFixed(2),
-                                                decoration: const InputDecoration(
-                                                    hintText: "Quantity",
-                                                    filled: true,
-                                                    fillColor: Color.fromARGB(
-                                                        200, 255, 255, 255),
-                                                    border:
-                                                        OutlineInputBorder()),
+                                                style: const TextStyle(
+                                                    color: Colors.black),
+                                                decoration: currentState
+                                                    .getTextInputDecoration(
+                                                        context, "Quantity"),
                                                 validator: (value) {
                                                   if (value == null ||
                                                       value.isEmpty ||
@@ -254,12 +239,11 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                                           .price,
                                                       code: "USD")
                                                   .format("#.00S"),
-                                          decoration: const InputDecoration(
-                                              hintText: "Price",
-                                              filled: true,
-                                              fillColor: Color.fromARGB(
-                                                  200, 255, 255, 255),
-                                              border: OutlineInputBorder()),
+                                          style: const TextStyle(
+                                              color: Colors.black),
+                                          decoration: currentState
+                                              .getTextInputDecoration(
+                                                  context, "Price"),
                                           validator: (value) {
                                             if (value == null ||
                                                 value.isEmpty ||

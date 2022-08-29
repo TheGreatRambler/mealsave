@@ -4,6 +4,7 @@ import 'package:mealsave/views/widgets/modify_recipe.dart';
 import 'package:mealsave/views/widgets/modify_ingredients.dart';
 import 'package:mealsave/views/state.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_svg/svg.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -52,14 +53,27 @@ class _HomePageState extends State<HomePage> {
           ? const Center(child: CircularProgressIndicator())
           : Consumer<CurrentState>(
               builder: (context, currentState, child) {
-                return ListView.builder(
-                  itemCount: currentState.numRecipes(),
-                  itemBuilder: (context, index) {
-                    return RecipeCard(
-                      recipe: currentState.recipe(index),
-                    );
-                  },
-                );
+                return currentState.numRecipes() > 0
+                    ? ListView.builder(
+                        itemCount: currentState.numRecipes(),
+                        itemBuilder: (context, index) {
+                          return RecipeCard(
+                            recipe: currentState.recipe(index),
+                          );
+                        },
+                      )
+                    : Center(
+                        child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                            const Text(
+                              "Add recipe to begin",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 30),
+                            ),
+                            SvgPicture.asset("images/logo.svg")
+                          ]));
               },
             ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,

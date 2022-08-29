@@ -59,8 +59,8 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                       children: <Widget>[
                         TextFormField(
                           initialValue: recipe.name,
-                          decoration: const InputDecoration(
-                              hintText: "Name", border: OutlineInputBorder()),
+                          decoration: currentState.getTextInputDecorationNormal(
+                              context, "Name"),
                           onFieldSubmitted: (value) {
                             setState(() {
                               recipe.name = value;
@@ -85,9 +85,8 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                           initialValue: recipe.cookMinutes == 0
                               ? null
                               : recipe.cookMinutes.toString(),
-                          decoration: const InputDecoration(
-                              hintText: "Preparation Time (Minutes)",
-                              border: OutlineInputBorder()),
+                          decoration: currentState.getTextInputDecorationNormal(
+                              context, "Preparation Time (Minutes0"),
                           validator: (value) {
                             if (value == null ||
                                 value.isEmpty ||
@@ -119,9 +118,8 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                           initialValue: recipe.expectedServings == 0.0
                               ? null
                               : recipe.expectedServings.toString(),
-                          decoration: const InputDecoration(
-                              hintText: "Servings produced",
-                              border: OutlineInputBorder()),
+                          decoration: currentState.getTextInputDecorationNormal(
+                              context, "Servings Produced"),
                           validator: (value) {
                             if (value == null ||
                                 value.isEmpty ||
@@ -238,19 +236,9 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                             StoreIngredient>(
                                           style: const TextStyle(
                                               color: Colors.black),
-                                          decoration: InputDecoration(
-                                            hintText: "Ingredient",
-                                            filled: true,
-                                            fillColor: const Color.fromARGB(
-                                                200, 255, 255, 255),
-                                            contentPadding:
-                                                const EdgeInsets.symmetric(
-                                                    horizontal: 20.0,
-                                                    vertical: 18.0),
-                                            border: OutlineInputBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(5.0)),
-                                          ),
+                                          decoration: currentState
+                                              .getDropdownDecoration(
+                                                  context, "Ingredient"),
                                           value: recipe.ingredients[index]
                                               .storeIngredient,
                                           icon:
@@ -285,22 +273,10 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                                   VolumeType>(
                                                 style: const TextStyle(
                                                     color: Colors.black),
-                                                decoration: InputDecoration(
-                                                  hintText: "Quantity Type",
-                                                  filled: true,
-                                                  fillColor:
-                                                      const Color.fromARGB(
-                                                          200, 255, 255, 255),
-                                                  contentPadding:
-                                                      const EdgeInsets
-                                                              .symmetric(
-                                                          horizontal: 20.0,
-                                                          vertical: 18.0),
-                                                  border: OutlineInputBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              5.0)),
-                                                ),
+                                                decoration: currentState
+                                                    .getDropdownDecoration(
+                                                        context,
+                                                        "Quantity Type"),
                                                 value: recipe.ingredients[index]
                                                     .volumeType,
                                                 icon: const Icon(
@@ -341,13 +317,11 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                                     : recipe.ingredients[index]
                                                         .volumeQuantity
                                                         .toStringAsFixed(2),
-                                                decoration: const InputDecoration(
-                                                    hintText: "Quantity",
-                                                    filled: true,
-                                                    fillColor: Color.fromARGB(
-                                                        200, 255, 255, 255),
-                                                    border:
-                                                        OutlineInputBorder()),
+                                                style: const TextStyle(
+                                                    color: Colors.black),
+                                                decoration: currentState
+                                                    .getTextInputDecoration(
+                                                        context, "Quantity"),
                                                 validator: (value) {
                                                   if (value == null ||
                                                       value.isEmpty ||
@@ -412,14 +386,27 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
                               minimumSize: const Size.fromHeight(60)),
-                          onPressed: () {
-                            setState(() {
-                              if (currentState.ingredients.isNotEmpty) {
+                          onPressed: () async {
+                            if (currentState.ingredients.isNotEmpty) {
+                              setState(() {
                                 recipe.ingredients.add(Ingredient.createNew());
-                              } else {
-                                // TODO this should not happen, tell user
-                              }
-                            });
+                              });
+                            } else {
+                              await showDialog<String>(
+                                context: context,
+                                builder: (BuildContext context) => AlertDialog(
+                                  title: const Text("Cannot add ingredient"),
+                                  content: const Text(
+                                      "Must create at least 1 store ingredient to add a recipe ingredient"),
+                                  actions: <Widget>[
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text("OK"),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
                           },
                           child: const Text("Add Ingredient"),
                         ),
