@@ -119,6 +119,7 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                                   VolumeType>(
                                                 style: const TextStyle(
                                                     color: Colors.black),
+                                                dropdownColor: Colors.white,
                                                 decoration: currentState
                                                     .getDropdownDecoration(
                                                         context,
@@ -127,8 +128,14 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                                     .ingredient(index)
                                                     .volumeType,
                                                 icon: const Icon(
-                                                    Icons.arrow_downward),
+                                                    Icons.arrow_downward,
+                                                    color: Colors.black),
                                                 elevation: 16,
+                                                validator: (value) {
+                                                  if (value == null) {
+                                                    return "No ingredient chosen";
+                                                  }
+                                                },
                                                 onChanged: (VolumeType? value) {
                                                   setState(() {
                                                     currentState

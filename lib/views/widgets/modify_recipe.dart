@@ -86,7 +86,7 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                               ? null
                               : recipe.cookMinutes.toString(),
                           decoration: currentState.getTextInputDecorationNormal(
-                              context, "Preparation Time (Minutes0"),
+                              context, "Preparation Time (Minutes)"),
                           validator: (value) {
                             if (value == null ||
                                 value.isEmpty ||
@@ -236,14 +236,20 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                             StoreIngredient>(
                                           style: const TextStyle(
                                               color: Colors.black),
+                                          dropdownColor: Colors.white,
                                           decoration: currentState
                                               .getDropdownDecoration(
                                                   context, "Ingredient"),
                                           value: recipe.ingredients[index]
                                               .storeIngredient,
-                                          icon:
-                                              const Icon(Icons.arrow_downward),
+                                          icon: const Icon(Icons.arrow_downward,
+                                              color: Colors.black),
                                           elevation: 16,
+                                          validator: (value) {
+                                            if (value == null) {
+                                              return "No ingredient chosen";
+                                            }
+                                          },
                                           onChanged: (StoreIngredient? value) {
                                             if (value != null) {
                                               setState(() {
@@ -259,7 +265,15 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                             return DropdownMenuItem<
                                                 StoreIngredient>(
                                               value: value,
-                                              child: Text(value.name),
+                                              child: Text(
+                                                value.name,
+                                                style: const TextStyle(
+                                                  fontSize: 19,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                                maxLines: 1,
+                                                textAlign: TextAlign.center,
+                                              ),
                                             );
                                           }).toList(),
                                         ),
@@ -273,6 +287,7 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                                   VolumeType>(
                                                 style: const TextStyle(
                                                     color: Colors.black),
+                                                dropdownColor: Colors.white,
                                                 decoration: currentState
                                                     .getDropdownDecoration(
                                                         context,
@@ -280,8 +295,14 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                                 value: recipe.ingredients[index]
                                                     .volumeType,
                                                 icon: const Icon(
-                                                    Icons.arrow_downward),
+                                                    Icons.arrow_downward,
+                                                    color: Colors.black),
                                                 elevation: 16,
+                                                validator: (value) {
+                                                  if (value == null) {
+                                                    return "No ingredient chosen";
+                                                  }
+                                                },
                                                 onChanged: (VolumeType? value) {
                                                   setState(() {
                                                     recipe.ingredients[index]
@@ -425,11 +446,16 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                 } else {
                                   await currentState.modifyRecipe(recipe, true);
                                 }
+                                return true;
+                              } else {
+                                return false;
                               }
                             }();
 
-                            runAsync.then((value) {
-                              Navigator.of(context).pop();
+                            runAsync.then((valid) {
+                              if (valid) {
+                                Navigator.of(context).pop();
+                              }
                             });
                           },
                           child: Text(newRecipe ? "Add New Recipe" : "Close"),
@@ -443,13 +469,8 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
           ),
         ),
         onWillPop: () async {
-          if (formKey.currentState!.validate()) {
-            if (newRecipe) {
-              // Add to existing recipes
-              await currentState.addRecipe(recipe);
-            } else {
-              await currentState.modifyRecipe(recipe, true);
-            }
+          if (!newRecipe && formKey.currentState!.validate()) {
+            await currentState.modifyRecipe(recipe, true);
           }
           return true;
         },

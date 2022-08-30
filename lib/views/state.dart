@@ -99,6 +99,9 @@ class CurrentState extends ChangeNotifier {
       enabledBorder: const OutlineInputBorder(
         borderSide: BorderSide(color: Colors.black, width: 1.0),
       ),
+      border: const OutlineInputBorder(
+        borderSide: BorderSide(color: Colors.black, width: 1.0),
+      ),
     );
   }
 
@@ -107,6 +110,13 @@ class CurrentState extends ChangeNotifier {
     return InputDecoration(
       hintText: hintText,
       enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(
+            color: Theme.of(context).brightness == Brightness.light
+                ? Colors.black
+                : Colors.white,
+            width: 1.0),
+      ),
+      border: OutlineInputBorder(
         borderSide: BorderSide(
             color: Theme.of(context).brightness == Brightness.light
                 ? Colors.black
