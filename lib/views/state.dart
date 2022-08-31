@@ -232,7 +232,18 @@ class Recipe {
   });
 }
 
-enum VolumeType { liter, teaspoon, tablespoon, ounce, cup, pint, quart, gallon }
+enum VolumeType {
+  liter,
+  teaspoon,
+  tablespoon,
+  ounce,
+  cup,
+  pint,
+  quart,
+  gallon,
+  pound,
+  gram,
+}
 
 extension VolumeTypeConversion on VolumeType {
   String toPrettyString() {
@@ -253,6 +264,10 @@ extension VolumeTypeConversion on VolumeType {
         return "Quarts";
       case VolumeType.gallon:
         return "Gallons";
+      case VolumeType.pound:
+        return "Pounds";
+      case VolumeType.gram:
+        return "Grams";
     }
   }
 
@@ -274,6 +289,10 @@ extension VolumeTypeConversion on VolumeType {
         return VolumeType.quart;
       case "Gallons":
         return VolumeType.gallon;
+      case "Pounds":
+        return VolumeType.pound;
+      case "Grams":
+        return VolumeType.gram;
     }
     return VolumeType.ounce;
   }
@@ -296,6 +315,16 @@ extension VolumeTypeConversion on VolumeType {
         return quarts(quantity);
       case VolumeType.gallon:
         return gallons(quantity);
+      case VolumeType.pound:
+        // Mass to volume measurement, using back of the envelope conversion
+        // TODO detect density from name of store item
+        // https://www.inchcalculator.com/convert/pound-to-fluid-ounce/
+        return fluidOunces(quantity * 15.33778);
+      case VolumeType.gram:
+        // Mass to volume measurement, using back of the envelope conversion
+        // TODO detect density from name of store item
+        // https://www.inchcalculator.com/convert/gram-to-teaspoon/
+        return teaspoons(quantity * 0.20288);
     }
   }
 
@@ -317,6 +346,10 @@ extension VolumeTypeConversion on VolumeType {
         return volume.asVolume(quarts);
       case VolumeType.gallon:
         return volume.asVolume(gallons);
+      case VolumeType.pound:
+        return volume.asVolume(fluidOunces) / 15.33778;
+      case VolumeType.gram:
+        return volume.asVolume(teaspoons) / 0.20288;
     }
   }
 
