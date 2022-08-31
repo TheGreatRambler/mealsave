@@ -316,10 +316,10 @@ extension VolumeTypeConversion on VolumeType {
       case VolumeType.gallon:
         return gallons(quantity);
       case VolumeType.pound:
-        // Mass to volume measurement, using back of the envelope conversion
+        // Mass to volume measurement, using back of the envelope conversion close to flour
         // TODO detect density from name of store item
         // https://www.inchcalculator.com/convert/pound-to-fluid-ounce/
-        return fluidOunces(quantity * 15.33778);
+        return fluidOunces(quantity * 20.0);
       case VolumeType.gram:
         // Mass to volume measurement, using back of the envelope conversion
         // TODO detect density from name of store item
@@ -347,7 +347,7 @@ extension VolumeTypeConversion on VolumeType {
       case VolumeType.gallon:
         return volume.asVolume(gallons);
       case VolumeType.pound:
-        return volume.asVolume(fluidOunces) / 15.33778;
+        return volume.asVolume(fluidOunces) / 20.0;
       case VolumeType.gram:
         return volume.asVolume(teaspoons) / 0.20288;
     }
