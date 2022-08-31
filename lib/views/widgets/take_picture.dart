@@ -30,6 +30,7 @@ class CameraView extends StatelessWidget {
         return FloatingActionButton(
           onPressed: () async {
             try {
+              await pluginAccess.loadCamera();
               await pluginAccess.rearCameraWait;
               pluginAccess.rearCamera?.setFlashMode(FlashMode.off);
 

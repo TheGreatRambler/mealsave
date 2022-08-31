@@ -142,12 +142,11 @@ class CurrentState extends ChangeNotifier {
 }
 
 class PluginAccess {
-  bool hasLoaded = false;
   CameraController? rearCamera;
   late Future<void>? rearCameraWait;
 
   Future<void> loadCamera() async {
-    if (!hasLoaded) {
+    if (rearCamera == null) {
       WidgetsFlutterBinding.ensureInitialized();
 
       final cameras = await availableCameras();

@@ -337,16 +337,18 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                             ));
 
                                             // Assign picture to ingredient
-                                            setState(() {
-                                              currentState
-                                                      .ingredient(index)
-                                                      .image =
-                                                  Uint8List.fromList(
-                                                      img.encodePng(picture));
-                                              currentState.modifyIngredient(
-                                                  currentState
-                                                      .ingredient(index));
-                                            });
+                                            if (picture != null) {
+                                              setState(() {
+                                                currentState
+                                                        .ingredient(index)
+                                                        .image =
+                                                    Uint8List.fromList(
+                                                        img.encodePng(picture));
+                                                currentState.modifyIngredient(
+                                                    currentState
+                                                        .ingredient(index));
+                                              });
+                                            }
                                           },
                                           child: const Text("Picture"),
                                         ),
