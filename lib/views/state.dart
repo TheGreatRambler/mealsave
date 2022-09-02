@@ -159,6 +159,11 @@ class PluginAccess {
       rearCameraWait = rearCamera?.initialize();
     }
   }
+
+  Future<void> disposeCamera() async {
+    await rearCamera?.dispose();
+    rearCamera = null;
+  }
 }
 
 class Recipe {
@@ -240,8 +245,9 @@ enum VolumeType {
   pint,
   quart,
   gallon,
-  pound,
-  gram,
+  pound, // Mass measurement
+  gram, // Mass measurement
+  scalar, // Integer amount of an item, cannot be converted to or from other types
 }
 
 extension VolumeTypeConversion on VolumeType {
@@ -267,6 +273,8 @@ extension VolumeTypeConversion on VolumeType {
         return "Pounds";
       case VolumeType.gram:
         return "Grams";
+      case VolumeType.scalar:
+        return "Number";
     }
   }
 
@@ -292,8 +300,10 @@ extension VolumeTypeConversion on VolumeType {
         return VolumeType.pound;
       case "Grams":
         return VolumeType.gram;
+      case "Number":
+        return VolumeType.scalar;
     }
-    return VolumeType.ounce;
+    return VolumeType.quart;
   }
 
   Volume fromQuantity(double quantity) {
@@ -324,6 +334,9 @@ extension VolumeTypeConversion on VolumeType {
         // TODO detect density from name of store item
         // https://www.inchcalculator.com/convert/gram-to-teaspoon/
         return teaspoons(quantity * 0.20288);
+      case VolumeType.scalar:
+        // Doesn't matter as long as we're consistent
+        return quarts(quantity);
     }
   }
 
@@ -349,11 +362,17 @@ extension VolumeTypeConversion on VolumeType {
         return volume.asVolume(fluidOunces) / 20.0;
       case VolumeType.gram:
         return volume.asVolume(teaspoons) / 0.20288;
+      case VolumeType.scalar:
+        return volume.asVolume(quarts);
     }
   }
 
   double convertQuantity(double old, VolumeType newType) {
-    return newType.toQuantity(fromQuantity(old));
+    if (this == VolumeType.scalar || newType == VolumeType.scalar) {
+      return 0.0;
+    } else {
+      return newType.toQuantity(fromQuantity(old));
+    }
   }
 }
 
@@ -412,14 +431,21 @@ class Ingredient {
 
   double getPrice() {
     if (storeIngredient != null) {
-      var thisVolume = volumeType.fromQuantity(volumeQuantity);
-      var storeVolume = storeIngredient!.volumeType
-          .fromQuantity(storeIngredient!.volumeQuantity);
-      // Need consistent unit to divide, can't divide units by each other
-      // Limitation of fling_units
-      var ingredientRatio =
-          thisVolume.asVolume(teaspoons) / storeVolume.asVolume(teaspoons);
-      return ingredientRatio * storeIngredient!.price;
+      if (storeIngredient!.volumeType == VolumeType.scalar) {
+        // Unitless value
+        return volumeQuantity /
+            storeIngredient!.volumeQuantity *
+            storeIngredient!.price;
+      } else {
+        var thisVolume = volumeType.fromQuantity(volumeQuantity);
+        var storeVolume = storeIngredient!.volumeType
+            .fromQuantity(storeIngredient!.volumeQuantity);
+        // Need consistent unit to divide, can't divide units by each other
+        // Limitation of fling_units
+        var ingredientRatio =
+            thisVolume.asVolume(teaspoons) / storeVolume.asVolume(teaspoons);
+        return ingredientRatio * storeIngredient!.price;
+      }
     } else {
       return 0.0;
     }
@@ -435,8 +461,13 @@ class StoreIngredient {
   Uint8List image = getDefaultImage();
 
   void changeType(VolumeType newType) {
-    volumeQuantity = volumeType.convertQuantity(volumeQuantity, newType);
-    volumeType = newType;
+    if (volumeType == VolumeType.scalar || newType == VolumeType.scalar) {
+      volumeQuantity = 1.0;
+      volumeType = newType;
+    } else {
+      volumeQuantity = volumeType.convertQuantity(volumeQuantity, newType);
+      volumeType = newType;
+    }
   }
 
   Map<String, Object?> toMap() {

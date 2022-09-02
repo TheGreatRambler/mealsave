@@ -4,8 +4,37 @@ import 'package:image/image.dart' as img;
 import 'package:mealsave/views/state.dart';
 import 'package:provider/provider.dart';
 
-class CameraView extends StatelessWidget {
-  CameraView();
+class CameraView extends StatefulWidget {
+  CameraView({
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  _CameraViewState createState() => _CameraViewState();
+}
+
+class _CameraViewState extends State<CameraView> {
+  bool isLoadingCamera = true;
+
+  _CameraViewState();
+
+  bool openCamera(BuildContext context) {
+    PluginAccess pluginAccess = Provider.of<PluginAccess>(context);
+
+    if (!isLoadingCamera) {
+      return true;
+    }
+
+    pluginAccess.loadCamera().then((value) {
+      pluginAccess.rearCameraWait?.then((value) {
+        setState(() {
+          isLoadingCamera = false;
+        });
+      });
+    });
+
+    return false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +50,7 @@ class CameraView extends StatelessWidget {
         ),
       ),
       body: Consumer<PluginAccess>(builder: (context, pluginAccess, child) {
-        return pluginAccess.rearCamera != null
+        return openCamera(context)
             ? CameraPreview(pluginAccess.rearCamera!)
             : const Center(child: CircularProgressIndicator());
       }),

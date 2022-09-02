@@ -282,47 +282,67 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                         ),
                                         Row(
                                           children: [
-                                            Expanded(
-                                              child: DropdownButtonFormField<
-                                                  VolumeType>(
-                                                style: const TextStyle(
-                                                    color: Colors.black),
-                                                dropdownColor: Colors.white,
-                                                decoration: currentState
-                                                    .getDropdownDecoration(
-                                                        context,
-                                                        "Quantity Type"),
-                                                value: recipe.ingredients[index]
-                                                    .volumeType,
-                                                icon: const Icon(
-                                                    Icons.arrow_downward,
-                                                    color: Colors.black),
-                                                elevation: 16,
-                                                validator: (value) {
-                                                  if (value == null) {
-                                                    return "No ingredient chosen";
-                                                  }
-                                                },
-                                                onChanged: (VolumeType? value) {
-                                                  setState(() {
-                                                    recipe.ingredients[index]
-                                                        .changeType(value ??
-                                                            VolumeType.ounce);
-                                                  });
-                                                },
-                                                items: VolumeType.values.map<
-                                                        DropdownMenuItem<
-                                                            VolumeType>>(
-                                                    (VolumeType value) {
-                                                  return DropdownMenuItem<
-                                                      VolumeType>(
-                                                    value: value,
-                                                    child: Text(
-                                                        value.toPrettyString()),
-                                                  );
-                                                }).toList(),
-                                              ),
-                                            ),
+                                            recipe.ingredients[index]
+                                                            .storeIngredient !=
+                                                        null &&
+                                                    recipe
+                                                            .ingredients[index]
+                                                            .storeIngredient!
+                                                            .volumeType ==
+                                                        VolumeType.scalar
+                                                ? const SizedBox.shrink()
+                                                : Expanded(
+                                                    child:
+                                                        DropdownButtonFormField<
+                                                            VolumeType>(
+                                                      style: const TextStyle(
+                                                          color: Colors.black),
+                                                      dropdownColor:
+                                                          Colors.white,
+                                                      decoration: currentState
+                                                          .getDropdownDecoration(
+                                                              context,
+                                                              "Quantity Type"),
+                                                      value: recipe
+                                                          .ingredients[index]
+                                                          .volumeType,
+                                                      icon: const Icon(
+                                                          Icons.arrow_downward,
+                                                          color: Colors.black),
+                                                      elevation: 16,
+                                                      validator: (value) {
+                                                        if (value == null) {
+                                                          return "No ingredient chosen";
+                                                        }
+                                                      },
+                                                      onChanged:
+                                                          (VolumeType? value) {
+                                                        setState(() {
+                                                          recipe.ingredients[
+                                                                  index]
+                                                              .changeType(value ??
+                                                                  VolumeType
+                                                                      .ounce);
+                                                        });
+                                                      },
+                                                      items: VolumeType.values
+                                                          .where((value) =>
+                                                              value !=
+                                                              VolumeType.scalar)
+                                                          .map<
+                                                                  DropdownMenuItem<
+                                                                      VolumeType>>(
+                                                              (VolumeType
+                                                                  value) {
+                                                        return DropdownMenuItem<
+                                                            VolumeType>(
+                                                          value: value,
+                                                          child: Text(value
+                                                              .toPrettyString()),
+                                                        );
+                                                      }).toList(),
+                                                    ),
+                                                  ),
                                             Expanded(
                                               child: TextFormField(
                                                 // To get initialValue to update

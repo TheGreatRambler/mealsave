@@ -11,13 +11,22 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
+  final List<AppLifecycleState> stateHistory = <AppLifecycleState>[];
   bool isloadingRecipes = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
     prepareState();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   Future<void> prepareState() async {
@@ -34,6 +43,18 @@ class _HomePageState extends State<HomePage> {
         isloadingRecipes = false;
       });
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
+    super.didChangeAppLifecycleState(state);
+    stateHistory.add(state);
+    if (state == AppLifecycleState.inactive) {
+      // Remove camera
+      PluginAccess pluginAccess =
+          Provider.of<PluginAccess>(context, listen: false);
+      await pluginAccess.disposeCamera();
+    }
   }
 
   @override
