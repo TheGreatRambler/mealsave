@@ -33,6 +33,7 @@ class CurrentState extends ChangeNotifier {
 
   Future<void> addIngredient(StoreIngredient ingredient) async {
     await recipeDatabase.insertIngredient(ingredient);
+    ingredient.showEditView = true;
     ingredients.add(ingredient);
     notifyListeners();
   }
@@ -382,6 +383,8 @@ class Ingredient {
   double volumeQuantity = 0;
   // To provide consistent price information
   StoreIngredient? storeIngredient;
+  // Whether to open edit view in list
+  bool showEditView = false;
 
   Map<String, Object?> toMap() {
     var entry = <String, Object?>{
@@ -459,6 +462,8 @@ class StoreIngredient {
   double volumeQuantity = 0;
   int price = 0;
   Uint8List image = getDefaultImage();
+  // Whether to open edit view in list
+  bool showEditView = false;
 
   void changeType(VolumeType newType) {
     if (volumeType == VolumeType.scalar || newType == VolumeType.scalar) {
