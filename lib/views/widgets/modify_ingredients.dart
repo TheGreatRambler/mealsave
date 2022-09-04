@@ -24,6 +24,7 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -36,80 +37,119 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            children: <Widget>[
-              Form(
-                  key: formKey,
-                  child: Consumer<CurrentState>(
-                      builder: (context, currentState, child) {
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: <Widget>[
-                        ListView.builder(
-                          scrollDirection: Axis.vertical,
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: currentState.numIngredients(),
-                          itemBuilder: (context, index) {
-                            return GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    currentState
-                                            .ingredient(index)
-                                            .showEditView =
-                                        !currentState
-                                            .ingredient(index)
-                                            .showEditView;
-                                  });
-                                },
-                                child: currentState
-                                        .ingredient(index)
-                                        .showEditView
-                                    ? Column(children: [
-                                        Container(
-                                            padding: const EdgeInsets.all(10.0),
-                                            decoration: BoxDecoration(
-                                              border: Border.all(
-                                                color: const Color(0xFF000000),
-                                                style: BorderStyle.solid,
-                                                width: 1.0,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(15),
-                                              image: DecorationImage(
-                                                image: MemoryImage(currentState
-                                                    .ingredient(index)
-                                                    .image),
-                                                fit: BoxFit.cover,
-                                              ),
+        child: Form(
+            key: formKey,
+            child:
+                Consumer<CurrentState>(builder: (context, currentState, child) {
+              return Column(
+                children: <Widget>[
+                  Expanded(
+                      child: ListView.builder(
+                    scrollDirection: Axis.vertical,
+                    shrinkWrap: true,
+                    itemCount: currentState.numIngredients(),
+                    itemBuilder: (context, index) {
+                      return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              currentState.ingredient(index).showEditView =
+                                  !currentState.ingredient(index).showEditView;
+                            });
+                          },
+                          child: currentState.ingredient(index).showEditView
+                              ? Column(children: [
+                                  Container(
+                                      padding: const EdgeInsets.all(10.0),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: const Color(0xFF000000),
+                                          style: BorderStyle.solid,
+                                          width: 1.0,
+                                        ),
+                                        image: DecorationImage(
+                                          image: MemoryImage(currentState
+                                              .ingredient(index)
+                                              .image),
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                      child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceEvenly,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            TextFormField(
+                                              initialValue: currentState
+                                                  .ingredient(index)
+                                                  .name,
+                                              style: const TextStyle(
+                                                  color: Colors.black),
+                                              decoration: currentState
+                                                  .getTextInputDecoration(
+                                                      context, "Name"),
+                                              validator: (value) {
+                                                if (value == null ||
+                                                    value.isEmpty) {
+                                                  return "Cannot be empty";
+                                                }
+                                              },
+                                              onFieldSubmitted: (value) {
+                                                setState(() {
+                                                  currentState
+                                                      .ingredient(index)
+                                                      .name = value;
+                                                  currentState.modifyIngredient(
+                                                      currentState
+                                                          .ingredient(index));
+                                                });
+                                              },
+                                              onChanged: (value) {
+                                                setState(() {
+                                                  currentState
+                                                      .ingredient(index)
+                                                      .name = value;
+                                                  currentState.modifyIngredient(
+                                                      currentState
+                                                          .ingredient(index));
+                                                });
+                                              },
                                             ),
-                                            child: Column(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceEvenly,
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  TextFormField(
-                                                    initialValue: currentState
-                                                        .ingredient(index)
-                                                        .name,
+                                            const SizedBox(
+                                              height: 20,
+                                            ),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child:
+                                                      DropdownButtonFormField<
+                                                          VolumeType>(
                                                     style: const TextStyle(
                                                         color: Colors.black),
+                                                    dropdownColor: Colors.white,
                                                     decoration: currentState
-                                                        .getTextInputDecoration(
-                                                            context, "Name"),
+                                                        .getDropdownDecoration(
+                                                            context,
+                                                            "Quantity Type"),
+                                                    value: currentState
+                                                        .ingredient(index)
+                                                        .volumeType,
+                                                    icon: const Icon(
+                                                        Icons.arrow_downward,
+                                                        color: Colors.black),
+                                                    elevation: 16,
                                                     validator: (value) {
-                                                      if (value == null ||
-                                                          value.isEmpty) {
-                                                        return "Cannot be empty";
+                                                      if (value == null) {
+                                                        return "No ingredient chosen";
                                                       }
                                                     },
-                                                    onFieldSubmitted: (value) {
+                                                    onChanged:
+                                                        (VolumeType? value) {
                                                       setState(() {
                                                         currentState
                                                             .ingredient(index)
-                                                            .name = value;
+                                                            .changeType(value ??
+                                                                VolumeType
+                                                                    .ounce);
                                                         currentState
                                                             .modifyIngredient(
                                                                 currentState
@@ -117,216 +157,66 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                                                         index));
                                                       });
                                                     },
-                                                    onChanged: (value) {
-                                                      setState(() {
-                                                        currentState
-                                                            .ingredient(index)
-                                                            .name = value;
-                                                        currentState
-                                                            .modifyIngredient(
-                                                                currentState
-                                                                    .ingredient(
-                                                                        index));
-                                                      });
-                                                    },
+                                                    items: VolumeType.values.map<
+                                                            DropdownMenuItem<
+                                                                VolumeType>>(
+                                                        (VolumeType value) {
+                                                      return DropdownMenuItem<
+                                                          VolumeType>(
+                                                        value: value,
+                                                        child: Text(value
+                                                            .toPrettyString()),
+                                                      );
+                                                    }).toList(),
                                                   ),
-                                                  const SizedBox(
-                                                    height: 20,
-                                                  ),
-                                                  Row(
-                                                    children: [
-                                                      Expanded(
-                                                        child:
-                                                            DropdownButtonFormField<
-                                                                VolumeType>(
-                                                          style:
-                                                              const TextStyle(
-                                                                  color: Colors
-                                                                      .black),
-                                                          dropdownColor:
-                                                              Colors.white,
-                                                          decoration: currentState
-                                                              .getDropdownDecoration(
-                                                                  context,
-                                                                  "Quantity Type"),
-                                                          value: currentState
-                                                              .ingredient(index)
-                                                              .volumeType,
-                                                          icon: const Icon(
-                                                              Icons
-                                                                  .arrow_downward,
-                                                              color:
-                                                                  Colors.black),
-                                                          elevation: 16,
-                                                          validator: (value) {
-                                                            if (value == null) {
-                                                              return "No ingredient chosen";
-                                                            }
-                                                          },
-                                                          onChanged:
-                                                              (VolumeType?
-                                                                  value) {
-                                                            setState(() {
-                                                              currentState
-                                                                  .ingredient(
-                                                                      index)
-                                                                  .changeType(value ??
-                                                                      VolumeType
-                                                                          .ounce);
-                                                              currentState.modifyIngredient(
-                                                                  currentState
-                                                                      .ingredient(
-                                                                          index));
-                                                            });
-                                                          },
-                                                          items: VolumeType.values.map<
-                                                                  DropdownMenuItem<
-                                                                      VolumeType>>(
-                                                              (VolumeType
-                                                                  value) {
-                                                            return DropdownMenuItem<
-                                                                VolumeType>(
-                                                              value: value,
-                                                              child: Text(value
-                                                                  .toPrettyString()),
-                                                            );
-                                                          }).toList(),
-                                                        ),
-                                                      ),
-                                                      Expanded(
-                                                        child: TextFormField(
-                                                          // To get initialValue to update
-                                                          key: Key(currentState
-                                                              .ingredient(index)
-                                                              .volumeType
-                                                              .toString()),
-                                                          initialValue: currentState
-                                                                      .ingredient(
-                                                                          index)
-                                                                      .volumeQuantity ==
-                                                                  0.0
-                                                              ? null
-                                                              : currentState
-                                                                  .ingredient(
-                                                                      index)
-                                                                  .volumeQuantity
-                                                                  .toStringAsFixed(
-                                                                      2),
-                                                          style:
-                                                              const TextStyle(
-                                                                  color: Colors
-                                                                      .black),
-                                                          decoration: currentState
-                                                              .getTextInputDecoration(
-                                                                  context,
-                                                                  "Quantity"),
-                                                          validator: (value) {
-                                                            if (value == null ||
-                                                                value.isEmpty ||
-                                                                double.tryParse(
-                                                                        value) ==
-                                                                    null) {
-                                                              return "Not a number";
-                                                            } else if (double
-                                                                    .tryParse(
-                                                                        value) ==
-                                                                0.0) {
-                                                              return "Cannot be zero";
-                                                            }
-                                                          },
-                                                          onFieldSubmitted:
-                                                              (value) {
-                                                            if (double.tryParse(
-                                                                    value) !=
-                                                                null) {
-                                                              setState(() {
-                                                                currentState
-                                                                        .ingredient(
-                                                                            index)
-                                                                        .volumeQuantity =
-                                                                    double.parse(
-                                                                        value);
-                                                                currentState.modifyIngredient(
-                                                                    currentState
-                                                                        .ingredient(
-                                                                            index));
-                                                              });
-                                                            }
-                                                          },
-                                                          onChanged: (value) {
-                                                            if (double.tryParse(
-                                                                    value) !=
-                                                                null) {
-                                                              setState(() {
-                                                                currentState
-                                                                        .ingredient(
-                                                                            index)
-                                                                        .volumeQuantity =
-                                                                    double.parse(
-                                                                        value);
-                                                                currentState.modifyIngredient(
-                                                                    currentState
-                                                                        .ingredient(
-                                                                            index));
-                                                              });
-                                                            }
-                                                          },
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  const SizedBox(
-                                                    height: 20,
-                                                  ),
-                                                  TextFormField(
+                                                ),
+                                                Expanded(
+                                                  child: TextFormField(
+                                                    // To get initialValue to update
+                                                    key: Key(currentState
+                                                        .ingredient(index)
+                                                        .volumeType
+                                                        .toString()),
                                                     initialValue: currentState
                                                                 .ingredient(
                                                                     index)
-                                                                .price ==
-                                                            0
+                                                                .volumeQuantity ==
+                                                            0.0
                                                         ? null
-                                                        : Money.fromInt(
-                                                                currentState
-                                                                    .ingredient(
-                                                                        index)
-                                                                    .price,
-                                                                code: "USD")
-                                                            .format("#.00S"),
+                                                        : currentState
+                                                            .ingredient(index)
+                                                            .volumeQuantity
+                                                            .toStringAsFixed(2),
                                                     style: const TextStyle(
                                                         color: Colors.black),
                                                     decoration: currentState
                                                         .getTextInputDecoration(
-                                                            context, "Price"),
+                                                            context,
+                                                            "Quantity"),
                                                     validator: (value) {
                                                       if (value == null ||
                                                           value.isEmpty ||
-                                                          Money.tryParse(value,
-                                                                  code:
-                                                                      "USD") ==
+                                                          double.tryParse(
+                                                                  value) ==
                                                               null) {
-                                                        return "Not money";
-                                                      } else if (Money.parse(
-                                                                  value,
-                                                                  code: "USD")
-                                                              .minorUnits
-                                                              .toInt() ==
-                                                          0) {
+                                                        return "Not a number";
+                                                      } else if (double
+                                                              .tryParse(
+                                                                  value) ==
+                                                          0.0) {
                                                         return "Cannot be zero";
                                                       }
                                                     },
                                                     onFieldSubmitted: (value) {
-                                                      if (Money.tryParse(value,
-                                                              code: "USD") !=
+                                                      if (double.tryParse(
+                                                              value) !=
                                                           null) {
                                                         setState(() {
                                                           currentState
-                                                              .ingredient(index)
-                                                              .price = Money
-                                                                  .parse(value,
-                                                                      code:
-                                                                          "USD")
-                                                              .minorUnits
-                                                              .toInt();
+                                                                  .ingredient(index)
+                                                                  .volumeQuantity =
+                                                              double.parse(
+                                                                  value);
                                                           currentState
                                                               .modifyIngredient(
                                                                   currentState
@@ -336,82 +226,15 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                                       }
                                                     },
                                                     onChanged: (value) {
-                                                      if (Money.tryParse(value,
-                                                              code: "USD") !=
+                                                      if (double.tryParse(
+                                                              value) !=
                                                           null) {
                                                         setState(() {
                                                           currentState
-                                                              .ingredient(index)
-                                                              .price = Money
-                                                                  .parse(value,
-                                                                      code:
-                                                                          "USD")
-                                                              .minorUnits
-                                                              .toInt();
-                                                          currentState
-                                                              .modifyIngredient(
-                                                                  currentState
-                                                                      .ingredient(
-                                                                          index));
-                                                        });
-                                                      }
-                                                    },
-                                                  ),
-                                                  const SizedBox(
-                                                    height: 20,
-                                                  ),
-                                                  ElevatedButton(
-                                                    style: ElevatedButton
-                                                        .styleFrom(
-                                                            minimumSize: const Size
-                                                                    .fromHeight(
-                                                                60)),
-                                                    onPressed: () async {
-                                                      final picture =
-                                                          await Navigator.of(
-                                                                  context)
-                                                              .push(
-                                                                  PageRouteBuilder(
-                                                        pageBuilder: (context,
-                                                                animation,
-                                                                secondaryAnimation) =>
-                                                            CameraView(),
-                                                        transitionsBuilder:
-                                                            (context,
-                                                                animation,
-                                                                secondaryAnimation,
-                                                                child) {
-                                                          const begin =
-                                                              Offset(0.0, 1.0);
-                                                          const end =
-                                                              Offset.zero;
-                                                          const curve =
-                                                              Curves.ease;
-
-                                                          var tween = Tween(
-                                                                  begin: begin,
-                                                                  end: end)
-                                                              .chain(CurveTween(
-                                                                  curve:
-                                                                      curve));
-
-                                                          return SlideTransition(
-                                                            position: animation
-                                                                .drive(tween),
-                                                            child: child,
-                                                          );
-                                                        },
-                                                      ));
-
-                                                      // Assign picture to ingredient
-                                                      if (picture != null) {
-                                                        setState(() {
-                                                          currentState
                                                                   .ingredient(index)
-                                                                  .image =
-                                                              Uint8List.fromList(
-                                                                  img.encodePng(
-                                                                      picture));
+                                                                  .volumeQuantity =
+                                                              double.parse(
+                                                                  value);
                                                           currentState
                                                               .modifyIngredient(
                                                                   currentState
@@ -420,162 +243,272 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                                         });
                                                       }
                                                     },
-                                                    child:
-                                                        const Text("Picture"),
                                                   ),
-                                                  const SizedBox(
-                                                    height: 20,
-                                                  ),
-                                                  ElevatedButton(
-                                                    style: ElevatedButton
-                                                        .styleFrom(
-                                                            minimumSize: const Size
-                                                                    .fromHeight(
-                                                                60)),
-                                                    onPressed: () async {
-                                                      setState(() {
-                                                        currentState
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(
+                                              height: 20,
+                                            ),
+                                            TextFormField(
+                                              initialValue: currentState
+                                                          .ingredient(index)
+                                                          .price ==
+                                                      0
+                                                  ? null
+                                                  : Money.fromInt(
+                                                          currentState
+                                                              .ingredient(index)
+                                                              .price,
+                                                          code: "USD")
+                                                      .format("#.00S"),
+                                              style: const TextStyle(
+                                                  color: Colors.black),
+                                              decoration: currentState
+                                                  .getTextInputDecoration(
+                                                      context, "Price"),
+                                              validator: (value) {
+                                                if (value == null ||
+                                                    value.isEmpty ||
+                                                    Money.tryParse(value,
+                                                            code: "USD") ==
+                                                        null) {
+                                                  return "Not money";
+                                                } else if (Money.parse(value,
+                                                            code: "USD")
+                                                        .minorUnits
+                                                        .toInt() ==
+                                                    0) {
+                                                  return "Cannot be zero";
+                                                }
+                                              },
+                                              onFieldSubmitted: (value) {
+                                                if (Money.tryParse(value,
+                                                        code: "USD") !=
+                                                    null) {
+                                                  setState(() {
+                                                    currentState
+                                                        .ingredient(index)
+                                                        .price = Money.parse(
+                                                            value,
+                                                            code: "USD")
+                                                        .minorUnits
+                                                        .toInt();
+                                                    currentState
+                                                        .modifyIngredient(
+                                                            currentState
+                                                                .ingredient(
+                                                                    index));
+                                                  });
+                                                }
+                                              },
+                                              onChanged: (value) {
+                                                if (Money.tryParse(value,
+                                                        code: "USD") !=
+                                                    null) {
+                                                  setState(() {
+                                                    currentState
+                                                        .ingredient(index)
+                                                        .price = Money.parse(
+                                                            value,
+                                                            code: "USD")
+                                                        .minorUnits
+                                                        .toInt();
+                                                    currentState
+                                                        .modifyIngredient(
+                                                            currentState
+                                                                .ingredient(
+                                                                    index));
+                                                  });
+                                                }
+                                              },
+                                            ),
+                                            const SizedBox(
+                                              height: 20,
+                                            ),
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                  minimumSize:
+                                                      const Size.fromHeight(
+                                                          60)),
+                                              onPressed: () async {
+                                                final picture =
+                                                    await Navigator.of(context)
+                                                        .push(PageRouteBuilder(
+                                                  pageBuilder: (context,
+                                                          animation,
+                                                          secondaryAnimation) =>
+                                                      CameraView(),
+                                                  transitionsBuilder: (context,
+                                                      animation,
+                                                      secondaryAnimation,
+                                                      child) {
+                                                    const begin =
+                                                        Offset(0.0, 1.0);
+                                                    const end = Offset.zero;
+                                                    const curve = Curves.ease;
+
+                                                    var tween = Tween(
+                                                            begin: begin,
+                                                            end: end)
+                                                        .chain(CurveTween(
+                                                            curve: curve));
+
+                                                    return SlideTransition(
+                                                      position: animation
+                                                          .drive(tween),
+                                                      child: child,
+                                                    );
+                                                  },
+                                                ));
+
+                                                // Assign picture to ingredient
+                                                if (picture != null) {
+                                                  setState(() {
+                                                    currentState
                                                             .ingredient(index)
-                                                            .showEditView = false;
-                                                      });
-                                                    },
-                                                    child:
-                                                        const Text("Minimize"),
-                                                  ),
-                                                  const SizedBox(
-                                                    height: 20,
-                                                  ),
-                                                  ElevatedButton(
-                                                    style: ElevatedButton
-                                                        .styleFrom(
-                                                            primary: const Color
-                                                                    .fromARGB(
-                                                                255,
-                                                                255,
-                                                                107,
-                                                                107),
-                                                            minimumSize: const Size
-                                                                    .fromHeight(
-                                                                60)),
-                                                    onPressed: () async {
-                                                      if (currentState
-                                                          .canRemoveIngredient(
-                                                              currentState
-                                                                  .ingredient(
-                                                                      index))) {
-                                                        await currentState
-                                                            .removeIngredient(
-                                                                currentState
-                                                                    .ingredient(
-                                                                        index));
-                                                      } else {
-                                                        await showDialog<
-                                                            String>(
-                                                          context: context,
-                                                          builder: (BuildContext
-                                                                  context) =>
-                                                              AlertDialog(
-                                                            title: const Text(
-                                                                "Cannot remove ingredient"),
-                                                            content: const Text(
-                                                                "One or more recipes use this ingredient, remove this ingredient from those recipes before deleting"),
-                                                            actions: <Widget>[
-                                                              TextButton(
-                                                                onPressed: () =>
-                                                                    Navigator.pop(
-                                                                        context),
-                                                                child:
-                                                                    const Text(
-                                                                        "OK"),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        );
-                                                      }
-                                                    },
-                                                    child: const Text("Delete"),
-                                                  )
-                                                ])),
-                                        const SizedBox(
-                                          height: 20,
-                                        ),
-                                      ])
-                                    : Column(children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(10.0),
-                                          decoration: BoxDecoration(
-                                            border: Border.all(
-                                              color: const Color(0xFF000000),
-                                              style: BorderStyle.solid,
-                                              width: 1.0,
+                                                            .image =
+                                                        Uint8List.fromList(
+                                                            img.encodePng(
+                                                                picture));
+                                                    currentState
+                                                        .modifyIngredient(
+                                                            currentState
+                                                                .ingredient(
+                                                                    index));
+                                                  });
+                                                }
+                                              },
+                                              child: const Text("Picture"),
                                             ),
-                                            borderRadius:
-                                                BorderRadius.circular(15),
-                                            image: DecorationImage(
-                                              colorFilter: ColorFilter.mode(
-                                                Colors.black.withOpacity(0.35),
-                                                BlendMode.multiply,
-                                              ),
-                                              image: MemoryImage(currentState
-                                                  .ingredient(index)
-                                                  .image),
-                                              fit: BoxFit.cover,
+                                            const SizedBox(
+                                              height: 20,
                                             ),
-                                          ),
-                                          width:
-                                              MediaQuery.of(context).size.width,
-                                          height: 60,
-                                          child: Center(
-                                              child: Text(
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                  minimumSize:
+                                                      const Size.fromHeight(
+                                                          60)),
+                                              onPressed: () async {
+                                                setState(() {
                                                   currentState
                                                       .ingredient(index)
-                                                      .name,
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 24,
-                                                  ))),
-                                        ),
-                                        const SizedBox(
-                                          height: 20,
-                                        ),
-                                      ]));
-                          },
-                        ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                              minimumSize: const Size.fromHeight(60)),
-                          onPressed: () {
-                            setState(() {
-                              currentState
-                                  .addIngredient(StoreIngredient.createNew());
-                            });
-                          },
-                          child: const Text("Add Ingredient"),
-                        ),
-                        const SizedBox(
-                          height: 20,
-                        ),
-                        Consumer<CurrentState>(
-                            builder: (context, currentState, child) {
-                          return ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                                minimumSize: const Size.fromHeight(60)),
-                            onPressed: () {
-                              // Validate returns true if the form is valid, or false otherwise.
-                              if (formKey.currentState!.validate()) {
-                                Navigator.of(context).pop();
-                              }
-                            },
-                            child: const Text("Close"),
-                          );
-                        })
-                      ],
+                                                      .showEditView = false;
+                                                });
+                                              },
+                                              child: const Text("Minimize"),
+                                            ),
+                                            const SizedBox(
+                                              height: 20,
+                                            ),
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                  primary: const Color.fromARGB(
+                                                      255, 255, 107, 107),
+                                                  minimumSize:
+                                                      const Size.fromHeight(
+                                                          60)),
+                                              onPressed: () async {
+                                                if (currentState
+                                                    .canRemoveIngredient(
+                                                        currentState.ingredient(
+                                                            index))) {
+                                                  await currentState
+                                                      .removeIngredient(
+                                                          currentState
+                                                              .ingredient(
+                                                                  index));
+                                                } else {
+                                                  await showDialog<String>(
+                                                    context: context,
+                                                    builder: (BuildContext
+                                                            context) =>
+                                                        AlertDialog(
+                                                      title: const Text(
+                                                          "Cannot remove ingredient"),
+                                                      content: const Text(
+                                                          "One or more recipes use this ingredient, remove this ingredient from those recipes before deleting"),
+                                                      actions: <Widget>[
+                                                        TextButton(
+                                                          onPressed: () =>
+                                                              Navigator.pop(
+                                                                  context),
+                                                          child:
+                                                              const Text("OK"),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                              child: const Text("Delete"),
+                                            )
+                                          ])),
+                                ])
+                              : Container(
+                                  padding: const EdgeInsets.all(10.0),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: const Color(0xFF000000),
+                                      style: BorderStyle.solid,
+                                      width: 1.0,
+                                    ),
+                                    image: DecorationImage(
+                                      colorFilter: ColorFilter.mode(
+                                        Colors.black.withOpacity(0.35),
+                                        BlendMode.multiply,
+                                      ),
+                                      image: MemoryImage(
+                                          currentState.ingredient(index).image),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  width: MediaQuery.of(context).size.width,
+                                  height: 60,
+                                  child: Center(
+                                      child: Text(
+                                          currentState.ingredient(index).name,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 24,
+                                          ))),
+                                ));
+                    },
+                  )),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(60)),
+                    onPressed: () {
+                      setState(() {
+                        currentState.addIngredient(StoreIngredient.createNew());
+                      });
+                    },
+                    child: const Text("Add Ingredient"),
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  Consumer<CurrentState>(
+                      builder: (context, currentState, child) {
+                    return ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(60)),
+                      onPressed: () {
+                        // Validate returns true if the form is valid, or false otherwise.
+                        if (formKey.currentState!.validate()) {
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      child: const Text("Close"),
                     );
-                  })),
-            ],
-          ),
-        ),
+                  })
+                ],
+              );
+            })),
       ),
     );
   }
