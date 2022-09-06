@@ -37,6 +37,7 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
     return Consumer<CurrentState>(builder: (context, currentState, child) {
       return WillPopScope(
         child: Scaffold(
+          resizeToAvoidBottomInset: false,
           appBar: AppBar(
             title: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -48,7 +49,7 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
             ),
           ),
           body: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(8.0),
             child: SingleChildScrollView(
               child: Column(
                 children: <Widget>[
@@ -78,136 +79,147 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                           },
                         ),
                         const SizedBox(
-                          height: 20,
+                          height: 8.0,
                         ),
-                        // Use https://stackoverflow.com/a/72651188 to display hint text when zero
-                        TextFormField(
-                          initialValue: recipe.cookMinutes == 0
-                              ? null
-                              : recipe.cookMinutes.toString(),
-                          decoration: currentState.getTextInputDecorationNormal(
-                              context, "Preparation Time (Minutes)"),
-                          validator: (value) {
-                            if (value == null ||
-                                value.isEmpty ||
-                                int.tryParse(value) == null) {
-                              return "Not a number";
-                            } else if (int.tryParse(value) == 0) {
-                              return "Cannot be zero";
-                            }
-                          },
-                          onFieldSubmitted: (value) {
-                            if (int.tryParse(value) != null) {
-                              setState(() {
-                                recipe.cookMinutes = int.parse(value);
-                              });
-                            }
-                          },
-                          onChanged: (value) {
-                            if (int.tryParse(value) != null) {
-                              setState(() {
-                                recipe.cookMinutes = int.parse(value);
-                              });
-                            }
-                          },
-                        ),
-                        const SizedBox(
-                          height: 20,
-                        ),
-                        TextFormField(
-                          initialValue: recipe.expectedServings == 0.0
-                              ? null
-                              : recipe.expectedServings.toString(),
-                          decoration: currentState.getTextInputDecorationNormal(
-                              context, "Servings Produced"),
-                          validator: (value) {
-                            if (value == null ||
-                                value.isEmpty ||
-                                double.tryParse(value) == null) {
-                              return "Not a number";
-                            } else if (double.tryParse(value) == 0.0) {
-                              return "Cannot be zero";
-                            }
-                          },
-                          onFieldSubmitted: (value) {
-                            if (double.tryParse(value) != null) {
-                              setState(() {
-                                recipe.expectedServings = double.parse(value);
-                              });
-                            }
-                          },
-                          onChanged: (value) {
-                            if (double.tryParse(value) != null) {
-                              setState(() {
-                                recipe.expectedServings = double.parse(value);
-                              });
-                            }
-                          },
-                        ),
-                        const SizedBox(
-                          height: 20,
-                        ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                              minimumSize: const Size.fromHeight(60)),
-                          onPressed: () async {
-                            final picture = await Navigator.of(context)
-                                .push(PageRouteBuilder(
-                              pageBuilder:
-                                  (context, animation, secondaryAnimation) =>
-                                      CameraView(),
-                              transitionsBuilder: (context, animation,
-                                  secondaryAnimation, child) {
-                                const begin = Offset(0.0, 1.0);
-                                const end = Offset.zero;
-                                const curve = Curves.ease;
-
-                                var tween = Tween(begin: begin, end: end)
-                                    .chain(CurveTween(curve: curve));
-
-                                return SlideTransition(
-                                  position: animation.drive(tween),
-                                  child: child,
-                                );
+                        Row(
+                          children: [
+                            Expanded(
+                                child: TextFormField(
+                              initialValue: recipe.cookMinutes == 0
+                                  ? null
+                                  : recipe.cookMinutes.toString(),
+                              decoration:
+                                  currentState.getTextInputDecorationNormal(
+                                      context, "Preparation Time (Minutes)"),
+                              validator: (value) {
+                                if (value == null ||
+                                    value.isEmpty ||
+                                    int.tryParse(value) == null) {
+                                  return "Not a number";
+                                } else if (int.tryParse(value) == 0) {
+                                  return "Cannot be zero";
+                                }
                               },
-                            ));
-
-                            // Assign picture to ingredient
-                            setState(() {
-                              recipe.image =
-                                  Uint8List.fromList(img.encodePng(picture));
-                            });
-                          },
-                          child: const Text("Picture"),
+                              onFieldSubmitted: (value) {
+                                if (int.tryParse(value) != null) {
+                                  setState(() {
+                                    recipe.cookMinutes = int.parse(value);
+                                  });
+                                }
+                              },
+                              onChanged: (value) {
+                                if (int.tryParse(value) != null) {
+                                  setState(() {
+                                    recipe.cookMinutes = int.parse(value);
+                                  });
+                                }
+                              },
+                            )),
+                            const SizedBox(width: 8.0),
+                            Expanded(
+                                child: TextFormField(
+                              initialValue: recipe.expectedServings == 0.0
+                                  ? null
+                                  : recipe.expectedServings.toString(),
+                              decoration:
+                                  currentState.getTextInputDecorationNormal(
+                                      context, "Servings Produced"),
+                              validator: (value) {
+                                if (value == null ||
+                                    value.isEmpty ||
+                                    double.tryParse(value) == null) {
+                                  return "Not a number";
+                                } else if (double.tryParse(value) == 0.0) {
+                                  return "Cannot be zero";
+                                }
+                              },
+                              onFieldSubmitted: (value) {
+                                if (double.tryParse(value) != null) {
+                                  setState(() {
+                                    recipe.expectedServings =
+                                        double.parse(value);
+                                  });
+                                }
+                              },
+                              onChanged: (value) {
+                                if (double.tryParse(value) != null) {
+                                  setState(() {
+                                    recipe.expectedServings =
+                                        double.parse(value);
+                                  });
+                                }
+                              },
+                            ))
+                          ],
                         ),
                         const SizedBox(
-                          height: 20,
+                          height: 8.0,
                         ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                              primary: const Color.fromARGB(255, 255, 107, 107),
-                              minimumSize: const Size.fromHeight(60)),
-                          onPressed: () {
-                            var runAsync = () async {
-                              await currentState.removeRecipe(
-                                  recipe, newRecipe);
-                            }();
+                        Row(
+                          children: [
+                            Expanded(
+                                child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(60)),
+                              onPressed: () async {
+                                final picture = await Navigator.of(context)
+                                    .push(PageRouteBuilder(
+                                  pageBuilder: (context, animation,
+                                          secondaryAnimation) =>
+                                      CameraView(),
+                                  transitionsBuilder: (context, animation,
+                                      secondaryAnimation, child) {
+                                    const begin = Offset(0.0, 1.0);
+                                    const end = Offset.zero;
+                                    const curve = Curves.ease;
 
-                            runAsync.then((value) {
-                              Navigator.of(context).pop();
-                            });
-                          },
-                          child: const Text("Delete"),
+                                    var tween = Tween(begin: begin, end: end)
+                                        .chain(CurveTween(curve: curve));
+
+                                    return SlideTransition(
+                                      position: animation.drive(tween),
+                                      child: child,
+                                    );
+                                  },
+                                ));
+
+                                // Assign picture to ingredient
+                                setState(() {
+                                  recipe.image = Uint8List.fromList(
+                                      img.encodePng(picture));
+                                });
+                              },
+                              child: const Text("Picture"),
+                            )),
+                            const SizedBox(width: 8.0),
+                            Expanded(
+                                child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                  primary:
+                                      const Color.fromARGB(255, 255, 107, 107),
+                                  minimumSize: const Size.fromHeight(60)),
+                              onPressed: () {
+                                var runAsync = () async {
+                                  await currentState.removeRecipe(
+                                      recipe, newRecipe);
+                                }();
+
+                                runAsync.then((value) {
+                                  Navigator.of(context).pop();
+                                });
+                              },
+                              child: const Text("Delete"),
+                            ))
+                          ],
                         ),
                         recipe.ingredients.isEmpty
                             ? const SizedBox.shrink()
                             : const SizedBox(
-                                height: 20,
+                                height: 8.0,
                               ),
                         ListView.builder(
                           scrollDirection: Axis.vertical,
                           shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
                           itemCount: recipe.ingredients.length,
                           itemBuilder: (context, index) {
                             return GestureDetector(
@@ -220,7 +232,7 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                               child: recipe.ingredients[index].showEditView
                                   ? Column(children: [
                                       Container(
-                                          padding: const EdgeInsets.all(10.0),
+                                          padding: const EdgeInsets.all(8.0),
                                           decoration: BoxDecoration(
                                             border: Border.all(
                                               color: const Color(0xFF000000),
@@ -298,20 +310,12 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                                   }).toList(),
                                                 ),
                                                 const SizedBox(
-                                                  height: 20,
+                                                  height: 8.0,
                                                 ),
                                                 Row(
                                                   children: [
                                                     recipe.ingredients[index]
-                                                                    .storeIngredient !=
-                                                                null &&
-                                                            recipe
-                                                                    .ingredients[
-                                                                        index]
-                                                                    .storeIngredient!
-                                                                    .volumeType ==
-                                                                VolumeType
-                                                                    .scalar
+                                                            .isScalar()
                                                         ? const SizedBox
                                                             .shrink()
                                                         : Expanded(
@@ -374,6 +378,12 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                                               }).toList(),
                                                             ),
                                                           ),
+                                                    recipe.ingredients[index]
+                                                            .isScalar()
+                                                        ? const SizedBox
+                                                            .shrink()
+                                                        : const SizedBox(
+                                                            width: 8.0),
                                                     Expanded(
                                                       child: TextFormField(
                                                         // To get initialValue to update
@@ -448,47 +458,58 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                                   ],
                                                 ),
                                                 const SizedBox(
-                                                  height: 20,
+                                                  height: 8.0,
                                                 ),
-                                                ElevatedButton(
-                                                  style:
-                                                      ElevatedButton.styleFrom(
-                                                          minimumSize: const Size
-                                                              .fromHeight(60)),
-                                                  onPressed: () async {
-                                                    setState(() {
-                                                      recipe.ingredients[index]
-                                                          .showEditView = false;
-                                                    });
-                                                  },
-                                                  child: const Text("Minimize"),
-                                                ),
-                                                const SizedBox(
-                                                  height: 20,
-                                                ),
-                                                ElevatedButton(
-                                                  style:
-                                                      ElevatedButton.styleFrom(
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                        child: ElevatedButton(
+                                                      style: ElevatedButton
+                                                          .styleFrom(
+                                                              minimumSize:
+                                                                  const Size
+                                                                          .fromHeight(
+                                                                      60)),
+                                                      onPressed: () async {
+                                                        setState(() {
+                                                          recipe
+                                                                  .ingredients[
+                                                                      index]
+                                                                  .showEditView =
+                                                              false;
+                                                        });
+                                                      },
+                                                      child: const Text(
+                                                          "Minimize"),
+                                                    )),
+                                                    const SizedBox(width: 8.0),
+                                                    Expanded(
+                                                        child: ElevatedButton(
+                                                      style: ElevatedButton.styleFrom(
                                                           primary: const Color
                                                                   .fromARGB(255,
                                                               255, 107, 107),
                                                           minimumSize: const Size
                                                               .fromHeight(60)),
-                                                  onPressed: () async {
-                                                    recipe.ingredients
-                                                        .removeAt(index);
-                                                    if (!newRecipe) {
-                                                      await currentState
-                                                          .modifyRecipe(
-                                                              recipe, false);
-                                                    }
-                                                  },
-                                                  child: const Text("Delete"),
+                                                      onPressed: () async {
+                                                        recipe.ingredients
+                                                            .removeAt(index);
+                                                        if (!newRecipe) {
+                                                          await currentState
+                                                              .modifyRecipe(
+                                                                  recipe,
+                                                                  false);
+                                                        }
+                                                      },
+                                                      child:
+                                                          const Text("Delete"),
+                                                    ))
+                                                  ],
                                                 ),
                                               ])),
                                     ])
                                   : Container(
-                                      padding: const EdgeInsets.all(10.0),
+                                      padding: const EdgeInsets.all(8.0),
                                       decoration: BoxDecoration(
                                         border: Border.all(
                                           color: const Color(0xFF000000),
@@ -526,66 +547,76 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                           },
                         ),
                         const SizedBox(
-                          height: 20,
+                          height: 8.0,
                         ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                              minimumSize: const Size.fromHeight(60)),
-                          onPressed: () async {
-                            if (currentState.ingredients.isNotEmpty) {
-                              setState(() {
-                                var newIngredient = Ingredient.createNew();
-                                newIngredient.showEditView = true;
-                                recipe.ingredients.add(newIngredient);
-                              });
-                            } else {
-                              await showDialog<String>(
-                                context: context,
-                                builder: (BuildContext context) => AlertDialog(
-                                  title: const Text("Cannot add ingredient"),
-                                  content: const Text(
-                                      "Must create at least 1 store ingredient to add a recipe ingredient"),
-                                  actions: <Widget>[
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: const Text("OK"),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
-                          },
-                          child: const Text("Add Ingredient"),
-                        ),
-                        const SizedBox(
-                          height: 20,
-                        ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                              minimumSize: const Size.fromHeight(60)),
-                          onPressed: () {
-                            var runAsync = () async {
-                              if (formKey.currentState!.validate()) {
-                                if (newRecipe) {
-                                  // Add to existing recipes
-                                  await currentState.addRecipe(recipe);
-                                } else {
-                                  await currentState.modifyRecipe(recipe, true);
-                                }
-                                return true;
-                              } else {
-                                return false;
-                              }
-                            }();
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                    minimumSize: const Size.fromHeight(60)),
+                                onPressed: () async {
+                                  if (currentState.ingredients.isNotEmpty) {
+                                    setState(() {
+                                      var newIngredient =
+                                          Ingredient.createNew();
+                                      newIngredient.showEditView = true;
+                                      recipe.ingredients.add(newIngredient);
+                                    });
+                                  } else {
+                                    await showDialog<String>(
+                                      context: context,
+                                      builder: (BuildContext context) =>
+                                          AlertDialog(
+                                        title:
+                                            const Text("Cannot add ingredient"),
+                                        content: const Text(
+                                            "Must create at least 1 store ingredient to add a recipe ingredient"),
+                                        actions: <Widget>[
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                            child: const Text("OK"),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: const Text("Add Ingredient"),
+                              ),
+                            ),
+                            const SizedBox(width: 8.0),
+                            Expanded(
+                                child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(60)),
+                              onPressed: () {
+                                var runAsync = () async {
+                                  if (formKey.currentState!.validate()) {
+                                    if (newRecipe) {
+                                      // Add to existing recipes
+                                      await currentState.addRecipe(recipe);
+                                    } else {
+                                      await currentState.modifyRecipe(
+                                          recipe, true);
+                                    }
+                                    return true;
+                                  } else {
+                                    return false;
+                                  }
+                                }();
 
-                            runAsync.then((valid) {
-                              if (valid) {
-                                Navigator.of(context).pop();
-                              }
-                            });
-                          },
-                          child: Text(newRecipe ? "Add New Recipe" : "Close"),
-                        )
+                                runAsync.then((valid) {
+                                  if (valid) {
+                                    Navigator.of(context).pop();
+                                  }
+                                });
+                              },
+                              child: const Text("Finished"),
+                            ))
+                          ],
+                        ),
                       ],
                     ),
                   ),

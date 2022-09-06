@@ -405,7 +405,7 @@ class Ingredient {
     return Ingredient(
       id: (map["_id"] ?? 0) as int,
       volumeType: VolumeTypeConversion.fromPrettyString(
-          (map["volumeType"] ?? "Ounces") as String),
+          (map["volume_type"] ?? "Ounces") as String),
       volumeQuantity: (map["volume_quantity"] ?? 0.0) as double,
       storeIngredient: storeIngredientIn,
     );
@@ -453,6 +453,12 @@ class Ingredient {
       return 0.0;
     }
   }
+
+  bool isScalar() {
+    // Scalar quantities are handled differently, needs a check
+    return storeIngredient != null &&
+        storeIngredient!.volumeType == VolumeType.scalar;
+  }
 }
 
 class StoreIngredient {
@@ -496,7 +502,7 @@ class StoreIngredient {
       id: (map["_id"] ?? 0) as int,
       name: (map["name"] ?? "") as String,
       volumeType: VolumeTypeConversion.fromPrettyString(
-          (map["volumeType"] ?? "Ounces") as String),
+          (map["volume_type"] ?? "Ounces") as String),
       volumeQuantity: (map["volume_quantity"] ?? 0.0) as double,
       price: (map["price"] ?? "") as int,
       image: (map["thumbnail"] ?? getDefaultImage()) as Uint8List,

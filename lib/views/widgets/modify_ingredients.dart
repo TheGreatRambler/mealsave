@@ -36,7 +36,7 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(8.0),
         child: Form(
             key: formKey,
             child:
@@ -115,7 +115,7 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                               },
                                             ),
                                             const SizedBox(
-                                              height: 20,
+                                              height: 8.0,
                                             ),
                                             Row(
                                               children: [
@@ -170,6 +170,7 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                                     }).toList(),
                                                   ),
                                                 ),
+                                                const SizedBox(width: 8.0),
                                                 Expanded(
                                                   child: TextFormField(
                                                     // To get initialValue to update
@@ -248,7 +249,7 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                               ],
                                             ),
                                             const SizedBox(
-                                              height: 20,
+                                              height: 8.0,
                                             ),
                                             TextFormField(
                                               initialValue: currentState
@@ -324,82 +325,95 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                               },
                                             ),
                                             const SizedBox(
-                                              height: 20,
+                                              height: 8.0,
                                             ),
-                                            ElevatedButton(
-                                              style: ElevatedButton.styleFrom(
-                                                  minimumSize:
-                                                      const Size.fromHeight(
-                                                          60)),
-                                              onPressed: () async {
-                                                final picture =
-                                                    await Navigator.of(context)
-                                                        .push(PageRouteBuilder(
-                                                  pageBuilder: (context,
-                                                          animation,
-                                                          secondaryAnimation) =>
-                                                      CameraView(),
-                                                  transitionsBuilder: (context,
-                                                      animation,
-                                                      secondaryAnimation,
-                                                      child) {
-                                                    const begin =
-                                                        Offset(0.0, 1.0);
-                                                    const end = Offset.zero;
-                                                    const curve = Curves.ease;
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: ElevatedButton(
+                                                    style: ElevatedButton
+                                                        .styleFrom(
+                                                            minimumSize: const Size
+                                                                    .fromHeight(
+                                                                60)),
+                                                    onPressed: () async {
+                                                      final picture =
+                                                          await Navigator.of(
+                                                                  context)
+                                                              .push(
+                                                                  PageRouteBuilder(
+                                                        pageBuilder: (context,
+                                                                animation,
+                                                                secondaryAnimation) =>
+                                                            CameraView(),
+                                                        transitionsBuilder:
+                                                            (context,
+                                                                animation,
+                                                                secondaryAnimation,
+                                                                child) {
+                                                          const begin =
+                                                              Offset(0.0, 1.0);
+                                                          const end =
+                                                              Offset.zero;
+                                                          const curve =
+                                                              Curves.ease;
 
-                                                    var tween = Tween(
-                                                            begin: begin,
-                                                            end: end)
-                                                        .chain(CurveTween(
-                                                            curve: curve));
+                                                          var tween = Tween(
+                                                                  begin: begin,
+                                                                  end: end)
+                                                              .chain(CurveTween(
+                                                                  curve:
+                                                                      curve));
 
-                                                    return SlideTransition(
-                                                      position: animation
-                                                          .drive(tween),
-                                                      child: child,
-                                                    );
+                                                          return SlideTransition(
+                                                            position: animation
+                                                                .drive(tween),
+                                                            child: child,
+                                                          );
+                                                        },
+                                                      ));
+
+                                                      // Assign picture to ingredient
+                                                      if (picture != null) {
+                                                        setState(() {
+                                                          currentState
+                                                                  .ingredient(index)
+                                                                  .image =
+                                                              Uint8List.fromList(
+                                                                  img.encodePng(
+                                                                      picture));
+                                                          currentState
+                                                              .modifyIngredient(
+                                                                  currentState
+                                                                      .ingredient(
+                                                                          index));
+                                                        });
+                                                      }
+                                                    },
+                                                    child:
+                                                        const Text("Picture"),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8.0),
+                                                Expanded(
+                                                    child: ElevatedButton(
+                                                  style:
+                                                      ElevatedButton.styleFrom(
+                                                          minimumSize: const Size
+                                                              .fromHeight(60)),
+                                                  onPressed: () async {
+                                                    setState(() {
+                                                      currentState
+                                                          .ingredient(index)
+                                                          .showEditView = false;
+                                                    });
                                                   },
-                                                ));
-
-                                                // Assign picture to ingredient
-                                                if (picture != null) {
-                                                  setState(() {
-                                                    currentState
-                                                            .ingredient(index)
-                                                            .image =
-                                                        Uint8List.fromList(
-                                                            img.encodePng(
-                                                                picture));
-                                                    currentState
-                                                        .modifyIngredient(
-                                                            currentState
-                                                                .ingredient(
-                                                                    index));
-                                                  });
-                                                }
-                                              },
-                                              child: const Text("Picture"),
+                                                  child: const Text("Minimize"),
+                                                ))
+                                              ],
                                             ),
                                             const SizedBox(
-                                              height: 20,
-                                            ),
-                                            ElevatedButton(
-                                              style: ElevatedButton.styleFrom(
-                                                  minimumSize:
-                                                      const Size.fromHeight(
-                                                          60)),
-                                              onPressed: () async {
-                                                setState(() {
-                                                  currentState
-                                                      .ingredient(index)
-                                                      .showEditView = false;
-                                                });
-                                              },
-                                              child: const Text("Minimize"),
-                                            ),
-                                            const SizedBox(
-                                              height: 20,
+                                              height: 8.0,
                                             ),
                                             ElevatedButton(
                                               style: ElevatedButton.styleFrom(
@@ -476,36 +490,37 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                 ));
                     },
                   )),
-                  const SizedBox(
-                    height: 20,
+                  Row(
+                    children: [
+                      Expanded(
+                          child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(60)),
+                        onPressed: () {
+                          setState(() {
+                            currentState
+                                .addIngredient(StoreIngredient.createNew());
+                          });
+                        },
+                        child: const Text("Add Ingredient"),
+                      )),
+                      const SizedBox(width: 8.0),
+                      Expanded(child: Consumer<CurrentState>(
+                          builder: (context, currentState, child) {
+                        return ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(60)),
+                          onPressed: () {
+                            // Validate returns true if the form is valid, or false otherwise.
+                            if (formKey.currentState!.validate()) {
+                              Navigator.of(context).pop();
+                            }
+                          },
+                          child: const Text("Close"),
+                        );
+                      }))
+                    ],
                   ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(60)),
-                    onPressed: () {
-                      setState(() {
-                        currentState.addIngredient(StoreIngredient.createNew());
-                      });
-                    },
-                    child: const Text("Add Ingredient"),
-                  ),
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  Consumer<CurrentState>(
-                      builder: (context, currentState, child) {
-                    return ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                          minimumSize: const Size.fromHeight(60)),
-                      onPressed: () {
-                        // Validate returns true if the form is valid, or false otherwise.
-                        if (formKey.currentState!.validate()) {
-                          Navigator.of(context).pop();
-                        }
-                      },
-                      child: const Text("Close"),
-                    );
-                  })
                 ],
               );
             })),
