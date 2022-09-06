@@ -82,6 +82,7 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                               initialValue: currentState
                                                   .ingredient(index)
                                                   .name,
+                                              keyboardType: TextInputType.text,
                                               style: const TextStyle(
                                                   color: Colors.black),
                                               decoration: currentState
@@ -188,6 +189,8 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                                             .ingredient(index)
                                                             .volumeQuantity
                                                             .toStringAsFixed(2),
+                                                    keyboardType:
+                                                        TextInputType.number,
                                                     style: const TextStyle(
                                                         color: Colors.black),
                                                     decoration: currentState
@@ -263,6 +266,8 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                                               .price,
                                                           code: "USD")
                                                       .format("#.00S"),
+                                              keyboardType:
+                                                  TextInputType.number,
                                               style: const TextStyle(
                                                   color: Colors.black),
                                               decoration: currentState
