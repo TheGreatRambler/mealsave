@@ -94,7 +94,8 @@ class CurrentState extends ChangeNotifier {
   InputDecoration getTextInputDecoration(
       BuildContext context, String hintText) {
     return InputDecoration(
-      hintText: hintText,
+      labelText: hintText,
+      labelStyle: const TextStyle(color: Colors.black),
       filled: true,
       fillColor: const Color.fromARGB(200, 255, 255, 255),
       enabledBorder: const OutlineInputBorder(
@@ -109,7 +110,11 @@ class CurrentState extends ChangeNotifier {
   InputDecoration getTextInputDecorationNormal(
       BuildContext context, String hintText) {
     return InputDecoration(
-      hintText: hintText,
+      labelText: hintText,
+      labelStyle: TextStyle(
+          color: Theme.of(context).brightness == Brightness.light
+              ? Colors.black
+              : Colors.white),
       enabledBorder: OutlineInputBorder(
         borderSide: BorderSide(
             color: Theme.of(context).brightness == Brightness.light
@@ -129,7 +134,8 @@ class CurrentState extends ChangeNotifier {
 
   InputDecoration getDropdownDecoration(BuildContext context, String hintText) {
     return InputDecoration(
-      hintText: hintText,
+      labelText: hintText,
+      labelStyle: const TextStyle(color: Colors.black),
       filled: true,
       fillColor: const Color.fromARGB(200, 255, 255, 255),
       contentPadding:
