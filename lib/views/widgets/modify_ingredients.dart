@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:fling_units/fling_units.dart';
 import 'package:flutter/material.dart';
 import 'package:money2/money2.dart';
 import 'package:mealsave/views/state.dart';
@@ -158,10 +159,15 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                                                         index));
                                                       });
                                                     },
-                                                    items: VolumeType.values.map<
-                                                            DropdownMenuItem<
-                                                                VolumeType>>(
-                                                        (VolumeType value) {
+                                                    items: VolumeType.values
+                                                        .where((value) =>
+                                                            value !=
+                                                            VolumeType
+                                                                .percentage)
+                                                        .map<
+                                                                DropdownMenuItem<
+                                                                    VolumeType>>(
+                                                            (VolumeType value) {
                                                       return DropdownMenuItem<
                                                           VolumeType>(
                                                         value: value,
@@ -196,7 +202,11 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                                     decoration: currentState
                                                         .getTextInputDecoration(
                                                             context,
-                                                            "Quantity"),
+                                                            currentState
+                                                                .ingredient(
+                                                                    index)
+                                                                .volumeType
+                                                                .getProperLabel()),
                                                     validator: (value) {
                                                       if (value == null ||
                                                           value.isEmpty ||
@@ -309,23 +319,25 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                                 }
                                               },
                                               onChanged: (value) {
-                                                if (Money.tryParse(value,
-                                                        code: "USD") !=
-                                                    null) {
-                                                  setState(() {
-                                                    currentState
-                                                        .ingredient(index)
-                                                        .price = Money.parse(
-                                                            value,
-                                                            code: "USD")
-                                                        .minorUnits
-                                                        .toInt();
-                                                    currentState
-                                                        .modifyIngredient(
-                                                            currentState
-                                                                .ingredient(
-                                                                    index));
-                                                  });
+                                                if (value.isNotEmpty) {
+                                                  if (Money.tryParse(value,
+                                                          code: "USD") !=
+                                                      null) {
+                                                    setState(() {
+                                                      currentState
+                                                          .ingredient(index)
+                                                          .price = Money.parse(
+                                                              value,
+                                                              code: "USD")
+                                                          .minorUnits
+                                                          .toInt();
+                                                      currentState
+                                                          .modifyIngredient(
+                                                              currentState
+                                                                  .ingredient(
+                                                                      index));
+                                                    });
+                                                  }
                                                 }
                                               },
                                             ),

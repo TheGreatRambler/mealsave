@@ -255,6 +255,7 @@ enum VolumeType {
   pound, // Mass measurement
   gram, // Mass measurement
   scalar, // Integer amount of an item, cannot be converted to or from other types
+  percentage, // Percentage of a store ingredient, works for all types
 }
 
 extension VolumeTypeConversion on VolumeType {
@@ -282,6 +283,8 @@ extension VolumeTypeConversion on VolumeType {
         return "Grams";
       case VolumeType.scalar:
         return "Number";
+      case VolumeType.percentage:
+        return "Percentage";
     }
   }
 
@@ -309,8 +312,11 @@ extension VolumeTypeConversion on VolumeType {
         return VolumeType.gram;
       case "Number":
         return VolumeType.scalar;
+      case "Percentage":
+        return VolumeType.percentage;
+      default:
+        return VolumeType.quart;
     }
-    return VolumeType.quart;
   }
 
   Volume fromQuantity(double quantity) {
@@ -344,7 +350,11 @@ extension VolumeTypeConversion on VolumeType {
       case VolumeType.scalar:
         // Doesn't matter as long as we're consistent
         return quarts(quantity);
+      case VolumeType.percentage:
+        null;
     }
+
+    return quarts(quantity);
   }
 
   double toQuantity(Volume volume) {
@@ -371,14 +381,32 @@ extension VolumeTypeConversion on VolumeType {
         return volume.asVolume(teaspoons) / 0.20288;
       case VolumeType.scalar:
         return volume.asVolume(quarts);
+      case VolumeType.percentage:
+        null;
     }
+
+    return 0.0;
   }
 
   double convertQuantity(double old, VolumeType newType) {
-    if (this == VolumeType.scalar || newType == VolumeType.scalar) {
+    if (this == VolumeType.scalar ||
+        newType == VolumeType.scalar ||
+        this == VolumeType.percentage ||
+        newType == VolumeType.percentage) {
       return 0.0;
     } else {
       return newType.toQuantity(fromQuantity(old));
+    }
+  }
+
+  String getProperLabel() {
+    switch (this) {
+      case VolumeType.scalar:
+        return "Number";
+      case VolumeType.percentage:
+        return "Percentage";
+      default:
+        return "Quantity";
     }
   }
 }
@@ -445,6 +473,9 @@ class Ingredient {
         return volumeQuantity /
             storeIngredient!.volumeQuantity *
             storeIngredient!.price;
+      } else if (volumeType == VolumeType.percentage) {
+        // Simply returns a percentage of the store ingredient price
+        return volumeQuantity / 100 * storeIngredient!.price;
       } else {
         var thisVolume = volumeType.fromQuantity(volumeQuantity);
         var storeVolume = storeIngredient!.volumeType

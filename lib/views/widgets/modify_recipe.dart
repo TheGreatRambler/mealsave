@@ -408,7 +408,11 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                                       decoration: currentState
                                                           .getTextInputDecoration(
                                                               context,
-                                                              "Quantity"),
+                                                              recipe
+                                                                  .ingredients[
+                                                                      index]
+                                                                  .volumeType
+                                                                  .getProperLabel()),
                                                       validator: (value) {
                                                         if (value == null ||
                                                             value.isEmpty ||
