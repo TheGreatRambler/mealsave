@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:mealsave/views/widgets/take_picture.dart';
 import 'package:image/image.dart' as img;
 import 'package:flutter/services.dart';
+import 'package:mealsave/views/widgets/number_dialog.dart';
 
 class ModifyRecipeMenu extends StatefulWidget {
   Recipe? recipe;
@@ -40,6 +41,8 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
         child: Scaffold(
           resizeToAvoidBottomInset: false,
           appBar: AppBar(
+            automaticallyImplyLeading: false,
+            centerTitle: true,
             title: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -87,10 +90,11 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                         children: [
                           Expanded(
                               child: TextFormField(
+                            key: Key(recipe.cookMinutes.toString()),
                             initialValue: recipe.cookMinutes == 0
                                 ? null
                                 : recipe.cookMinutes.toString(),
-                            keyboardType: TextInputType.number,
+                            readOnly: true,
                             decoration:
                                 currentState.getTextInputDecorationNormal(
                                     context, "Preparation Time (Minutes)"),
@@ -103,17 +107,17 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                 return "Cannot be zero";
                               }
                             },
-                            onFieldSubmitted: (value) {
-                              if (int.tryParse(value) != null) {
+                            onTap: () async {
+                              var returnedValue = await openIntDialog(
+                                  context,
+                                  0,
+                                  4294967295,
+                                  recipe.cookMinutes,
+                                  const Text("Preparation Time (Minutes)"));
+
+                              if (returnedValue != null) {
                                 setState(() {
-                                  recipe.cookMinutes = int.parse(value);
-                                });
-                              }
-                            },
-                            onChanged: (value) {
-                              if (int.tryParse(value) != null) {
-                                setState(() {
-                                  recipe.cookMinutes = int.parse(value);
+                                  recipe.cookMinutes = returnedValue;
                                 });
                               }
                             },
@@ -121,10 +125,11 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                           const SizedBox(width: 8.0),
                           Expanded(
                               child: TextFormField(
+                            key: Key(recipe.expectedServings.toString()),
                             initialValue: recipe.expectedServings == 0.0
                                 ? null
                                 : recipe.expectedServings.toString(),
-                            keyboardType: TextInputType.number,
+                            readOnly: true,
                             decoration:
                                 currentState.getTextInputDecorationNormal(
                                     context, "Servings Produced"),
@@ -137,17 +142,17 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                 return "Cannot be zero";
                               }
                             },
-                            onFieldSubmitted: (value) {
-                              if (double.tryParse(value) != null) {
+                            onTap: () async {
+                              var returnedValue = await openNumberDialog(
+                                  context,
+                                  0,
+                                  4294967295,
+                                  recipe.expectedServings,
+                                  const Text("Servings Produced"));
+
+                              if (returnedValue != null) {
                                 setState(() {
-                                  recipe.expectedServings = double.parse(value);
-                                });
-                              }
-                            },
-                            onChanged: (value) {
-                              if (double.tryParse(value) != null) {
-                                setState(() {
-                                  recipe.expectedServings = double.parse(value);
+                                  recipe.expectedServings = returnedValue;
                                 });
                               }
                             },
@@ -236,10 +241,16 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                         padding: const EdgeInsets.all(8.0),
                                         decoration: BoxDecoration(
                                           border: Border.all(
-                                            color: const Color(0xFF000000),
+                                            color:
+                                                Theme.of(context).brightness ==
+                                                        Brightness.light
+                                                    ? Colors.black
+                                                    : Colors.white,
                                             style: BorderStyle.solid,
                                             width: 1.0,
                                           ),
+                                          borderRadius: const BorderRadius.all(
+                                              Radius.circular(5.0)),
                                           image: DecorationImage(
                                             image: MemoryImage(recipe
                                                     .ingredients[index]
@@ -387,7 +398,7 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                                       // To get initialValue to update
                                                       key: Key(recipe
                                                           .ingredients[index]
-                                                          .volumeType
+                                                          .volumeQuantity
                                                           .toString()),
                                                       initialValue: recipe
                                                                   .ingredients[
@@ -401,8 +412,7 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                                               .volumeQuantity
                                                               .toStringAsFixed(
                                                                   2),
-                                                      keyboardType:
-                                                          TextInputType.number,
+                                                      readOnly: true,
                                                       style: const TextStyle(
                                                           color: Colors.black),
                                                       decoration: currentState
@@ -427,32 +437,30 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                                           return "Cannot be zero";
                                                         }
                                                       },
-                                                      onFieldSubmitted:
-                                                          (value) {
-                                                        if (double.tryParse(
-                                                                value) !=
+                                                      onTap: () async {
+                                                        var returnedValue =
+                                                            await openNumberDialog(
+                                                                context,
+                                                                0,
+                                                                4294967295,
+                                                                recipe
+                                                                    .ingredients[
+                                                                        index]
+                                                                    .volumeQuantity,
+                                                                Text(recipe
+                                                                    .ingredients[
+                                                                        index]
+                                                                    .volumeType
+                                                                    .getProperLabel()));
+
+                                                        if (returnedValue !=
                                                             null) {
                                                           setState(() {
                                                             recipe
                                                                     .ingredients[
                                                                         index]
                                                                     .volumeQuantity =
-                                                                double.parse(
-                                                                    value);
-                                                          });
-                                                        }
-                                                      },
-                                                      onChanged: (value) {
-                                                        if (double.tryParse(
-                                                                value) !=
-                                                            null) {
-                                                          setState(() {
-                                                            recipe
-                                                                    .ingredients[
-                                                                        index]
-                                                                    .volumeQuantity =
-                                                                double.parse(
-                                                                    value);
+                                                                returnedValue;
                                                           });
                                                         }
                                                       },
@@ -515,10 +523,15 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                     padding: const EdgeInsets.all(8.0),
                                     decoration: BoxDecoration(
                                       border: Border.all(
-                                        color: const Color(0xFF000000),
+                                        color: Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Colors.black
+                                            : Colors.white,
                                         style: BorderStyle.solid,
                                         width: 1.0,
                                       ),
+                                      borderRadius: const BorderRadius.all(
+                                          Radius.circular(5.0)),
                                       image: DecorationImage(
                                         colorFilter: ColorFilter.mode(
                                           Colors.black.withOpacity(0.35),

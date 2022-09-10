@@ -7,6 +7,7 @@ import 'package:mealsave/views/state.dart';
 import 'package:provider/provider.dart';
 import 'package:mealsave/views/widgets/take_picture.dart';
 import 'package:image/image.dart' as img;
+import 'package:mealsave/views/widgets/number_dialog.dart';
 
 class ModifyIngredientsMenu extends StatefulWidget {
   ModifyIngredientsMenu({
@@ -27,8 +28,10 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
+        centerTitle: true,
         title: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: const [
             Icon(Icons.restaurant_menu),
             SizedBox(width: 10),
@@ -63,10 +66,15 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                       padding: const EdgeInsets.all(10.0),
                                       decoration: BoxDecoration(
                                         border: Border.all(
-                                          color: const Color(0xFF000000),
+                                          color: Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? Colors.black
+                                              : Colors.white,
                                           style: BorderStyle.solid,
                                           width: 1.0,
                                         ),
+                                        borderRadius: const BorderRadius.all(
+                                            Radius.circular(5.0)),
                                         image: DecorationImage(
                                           image: MemoryImage(currentState
                                               .ingredient(index)
@@ -183,7 +191,7 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                                     // To get initialValue to update
                                                     key: Key(currentState
                                                         .ingredient(index)
-                                                        .volumeType
+                                                        .volumeQuantity
                                                         .toString()),
                                                     initialValue: currentState
                                                                 .ingredient(
@@ -195,8 +203,7 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                                             .ingredient(index)
                                                             .volumeQuantity
                                                             .toStringAsFixed(2),
-                                                    keyboardType:
-                                                        TextInputType.number,
+                                                    readOnly: true,
                                                     style: const TextStyle(
                                                         color: Colors.black),
                                                     decoration: currentState
@@ -221,34 +228,29 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                                         return "Cannot be zero";
                                                       }
                                                     },
-                                                    onFieldSubmitted: (value) {
-                                                      if (double.tryParse(
-                                                              value) !=
+                                                    onTap: () async {
+                                                      var returnedValue =
+                                                          await openNumberDialog(
+                                                              context,
+                                                              0,
+                                                              4294967295,
+                                                              currentState
+                                                                  .ingredient(
+                                                                      index)
+                                                                  .volumeQuantity,
+                                                              Text(currentState
+                                                                  .ingredient(
+                                                                      index)
+                                                                  .volumeType
+                                                                  .getProperLabel()));
+
+                                                      if (returnedValue !=
                                                           null) {
                                                         setState(() {
                                                           currentState
                                                                   .ingredient(index)
                                                                   .volumeQuantity =
-                                                              double.parse(
-                                                                  value);
-                                                          currentState
-                                                              .modifyIngredient(
-                                                                  currentState
-                                                                      .ingredient(
-                                                                          index));
-                                                        });
-                                                      }
-                                                    },
-                                                    onChanged: (value) {
-                                                      if (double.tryParse(
-                                                              value) !=
-                                                          null) {
-                                                        setState(() {
-                                                          currentState
-                                                                  .ingredient(index)
-                                                                  .volumeQuantity =
-                                                              double.parse(
-                                                                  value);
+                                                              returnedValue;
                                                           currentState
                                                               .modifyIngredient(
                                                                   currentState
@@ -265,6 +267,10 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                               height: 8.0,
                                             ),
                                             TextFormField(
+                                              key: Key(currentState
+                                                  .ingredient(index)
+                                                  .price
+                                                  .toString()),
                                               initialValue: currentState
                                                           .ingredient(index)
                                                           .price ==
@@ -276,68 +282,38 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                                               .price,
                                                           code: "USD")
                                                       .format("#.00S"),
-                                              keyboardType:
-                                                  TextInputType.number,
+                                              readOnly: true,
                                               style: const TextStyle(
                                                   color: Colors.black),
                                               decoration: currentState
                                                   .getTextInputDecoration(
                                                       context, "Price"),
-                                              validator: (value) {
-                                                if (value == null ||
-                                                    value.isEmpty ||
-                                                    Money.tryParse(value,
-                                                            code: "USD") ==
-                                                        null) {
-                                                  return "Not money";
-                                                } else if (Money.parse(value,
-                                                            code: "USD")
-                                                        .minorUnits
-                                                        .toInt() ==
-                                                    0) {
-                                                  return "Cannot be zero";
-                                                }
-                                              },
-                                              onFieldSubmitted: (value) {
-                                                if (Money.tryParse(value,
-                                                        code: "USD") !=
-                                                    null) {
+                                              onTap: () async {
+                                                var returnedValue =
+                                                    await openNumberDialog(
+                                                        context,
+                                                        0,
+                                                        4294967295,
+                                                        currentState
+                                                                .ingredient(
+                                                                    index)
+                                                                .price /
+                                                            100.0,
+                                                        const Text("Price"));
+
+                                                if (returnedValue != null) {
                                                   setState(() {
                                                     currentState
-                                                        .ingredient(index)
-                                                        .price = Money.parse(
-                                                            value,
-                                                            code: "USD")
-                                                        .minorUnits
-                                                        .toInt();
+                                                            .ingredient(index)
+                                                            .price =
+                                                        (returnedValue * 100.0)
+                                                            .floor();
                                                     currentState
                                                         .modifyIngredient(
                                                             currentState
                                                                 .ingredient(
                                                                     index));
                                                   });
-                                                }
-                                              },
-                                              onChanged: (value) {
-                                                if (value.isNotEmpty) {
-                                                  if (Money.tryParse(value,
-                                                          code: "USD") !=
-                                                      null) {
-                                                    setState(() {
-                                                      currentState
-                                                          .ingredient(index)
-                                                          .price = Money.parse(
-                                                              value,
-                                                              code: "USD")
-                                                          .minorUnits
-                                                          .toInt();
-                                                      currentState
-                                                          .modifyIngredient(
-                                                              currentState
-                                                                  .ingredient(
-                                                                      index));
-                                                    });
-                                                  }
                                                 }
                                               },
                                             ),
@@ -480,10 +456,15 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                   padding: const EdgeInsets.all(10.0),
                                   decoration: BoxDecoration(
                                     border: Border.all(
-                                      color: const Color(0xFF000000),
+                                      color: Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Colors.black
+                                          : Colors.white,
                                       style: BorderStyle.solid,
                                       width: 1.0,
                                     ),
+                                    borderRadius: const BorderRadius.all(
+                                        Radius.circular(5.0)),
                                     image: DecorationImage(
                                       colorFilter: ColorFilter.mode(
                                         Colors.black.withOpacity(0.35),
