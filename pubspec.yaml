@@ -43,6 +43,9 @@ dependencies:
   camera: ^0.10.0+1
   flutter_svg: ^1.1.4
   numberpicker: ^2.1.1
+  intl: ^0.17.0
+  permission_handler: ^10.0.0
+  path_provider: ^2.0.11
 
 dev_dependencies:
   flutter_test:

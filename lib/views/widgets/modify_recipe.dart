@@ -191,10 +191,12 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                               ));
 
                               // Assign picture to ingredient
-                              setState(() {
-                                recipe.image =
-                                    Uint8List.fromList(img.encodePng(picture));
-                              });
+                              if (picture != null) {
+                                setState(() {
+                                  recipe.image = Uint8List.fromList(
+                                      img.encodePng(picture));
+                                });
+                              }
                             },
                             child: const Text("Picture"),
                           )),

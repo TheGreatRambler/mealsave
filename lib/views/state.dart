@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:typed_data';
 import 'dart:developer';
 import 'dart:io';
@@ -8,6 +9,9 @@ import 'package:image/image.dart' as img;
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
+import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:path_provider/path_provider.dart';
 
 class CurrentState extends ChangeNotifier {
   final RecipeDatabase recipeDatabase = RecipeDatabase();
@@ -72,6 +76,10 @@ class CurrentState extends ChangeNotifier {
   Future<void> modifyIngredient(StoreIngredient ingredient) async {
     await recipeDatabase.updateIngredient(ingredient);
     notifyListeners();
+  }
+
+  Future<void> backupRecipe(Recipe recipe) async {
+    await recipeDatabase.getRecipeBackup(recipe);
   }
 
   int numRecipes() {
@@ -654,6 +662,102 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
     return recipe;
   }
 
+  Future<Uint8List> getRecipeBackup(Recipe recipe) async {
+    var canAccessExternalStorage = await Permission.storage.request().isGranted;
+    if (!canAccessExternalStorage) {
+      // Uh oh
+      return Uint8List(0);
+    }
+
+    // Create new database for this backup
+    final DateFormat dateFormatter = DateFormat("yyyy-MM-dd-H:m:s");
+    String databaseName =
+        "${recipe.name}-${dateFormatter.format(DateTime.now())}.db";
+    String basePath = Directory.systemTemp.toString();
+    // This downloads path does NOT go in the main downloads, as far as I can tell
+    var downloadsPath =
+        await getExternalStorageDirectories(type: StorageDirectory.downloads);
+    if (downloadsPath != null) {
+      await downloadsPath[0].create(recursive: true);
+      basePath = downloadsPath[0].path;
+    }
+    String databasePath = join(basePath, databaseName);
+
+    //print("Database path: $databasePath");
+
+    await openDatabase(databasePath, version: 1,
+        onCreate: (Database backupDb, int version) async {
+      await backupDb.execute('''
+CREATE TABLE IF NOT EXISTS recipes ( 
+    _id integer primary key autoincrement, 
+    name text not null,
+    expected_servings real not null,
+    cook_minutes integer not null,
+    thumbnail blob not null)
+''');
+
+      await backupDb.execute('''
+CREATE TABLE IF NOT EXISTS recipe_ingredients ( 
+    _id integer primary key autoincrement,
+    recipe integer not null,
+    volume_type text not null,
+    volume_quantity real not null,
+    store_ingredient integer not null)
+''');
+
+      await backupDb.execute('''
+CREATE TABLE IF NOT EXISTS store_ingredients ( 
+    _id integer primary key autoincrement, 
+    name text not null,
+    volume_type text not null,
+    volume_quantity real not null,
+    price integer not null,
+    thumbnail blob not null)
+''');
+    }, onOpen: (Database backupDb) async {
+      // Insert into backup
+      await backupDb.insert("recipes", recipe.toMap());
+
+      List<Map<String, Object?>> recipeIngredients =
+          await db?.query("recipe_ingredients",
+                  columns: [
+                    "_id",
+                    "recipe",
+                    "volume_type",
+                    "volume_quantity",
+                    "store_ingredient",
+                  ],
+                  where: "recipe = ?",
+                  whereArgs: [recipe.id]) ??
+              [];
+
+      for (var recipeIngredient in recipeIngredients) {
+        await backupDb.insert("recipe_ingredients", recipeIngredient);
+        List<Map<String, Object?>> storeIngredients =
+            await db?.query("store_ingredients",
+                    columns: [
+                      "_id",
+                      "name",
+                      "volume_type",
+                      "volume_quantity",
+                      "price",
+                      "thumbnail",
+                    ],
+                    where: "_id = ?",
+                    whereArgs: [recipeIngredient["store_ingredient"] as int]) ??
+                [];
+
+        for (var storeIngredient in storeIngredients) {
+          await backupDb.insert("store_ingredients", storeIngredient);
+        }
+      }
+
+      backupDb.close();
+    });
+
+    return Uint8List(0);
+  }
+
   Future<List<Recipe>> getAllRecipes(List<StoreIngredient> ingredients) async {
     List<Map<String, Object?>>? recipes = await db?.query("recipes", columns: [
       "_id",
@@ -676,6 +780,9 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
 
     List<Recipe> returnedRecipes = [];
     for (var recipe in recipes) {
+      // Around 100kb
+      //print("Size of thumbnail: ${(recipe["thumbnail"] as Uint8List).length}");
+
       List<Map<String, Object?>>? recipeIngredients =
           await db?.query("recipe_ingredients",
               columns: [
