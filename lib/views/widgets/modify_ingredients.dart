@@ -452,40 +452,56 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                             )
                                           ])),
                                 ])
-                              : Container(
-                                  padding: const EdgeInsets.all(10.0),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: Theme.of(context).brightness ==
-                                              Brightness.light
-                                          ? Colors.black
-                                          : Colors.white,
-                                      style: BorderStyle.solid,
-                                      width: 1.0,
-                                    ),
-                                    borderRadius: const BorderRadius.all(
-                                        Radius.circular(5.0)),
-                                    image: DecorationImage(
-                                      colorFilter: ColorFilter.mode(
-                                        Colors.black.withOpacity(0.35),
-                                        BlendMode.multiply,
+                              : Dismissible(
+                                  key: UniqueKey(),
+                                  // Only allow dismissing if the ingredient can be deleted
+                                  direction: currentState.canRemoveIngredient(
+                                          currentState.ingredient(index))
+                                      ? DismissDirection.endToStart
+                                      : DismissDirection.none,
+                                  onDismissed: (_) async {
+                                    // Remove ingredient if possible
+                                    if (currentState.canRemoveIngredient(
+                                        currentState.ingredient(index))) {
+                                      await currentState.removeIngredient(
+                                          currentState.ingredient(index));
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(10.0),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Colors.black
+                                            : Colors.white,
+                                        style: BorderStyle.solid,
+                                        width: 1.0,
                                       ),
-                                      image: MemoryImage(
-                                          currentState.ingredient(index).image),
-                                      fit: BoxFit.cover,
+                                      borderRadius: const BorderRadius.all(
+                                          Radius.circular(5.0)),
+                                      image: DecorationImage(
+                                        colorFilter: ColorFilter.mode(
+                                          Colors.black.withOpacity(0.35),
+                                          BlendMode.multiply,
+                                        ),
+                                        image: MemoryImage(currentState
+                                            .ingredient(index)
+                                            .image),
+                                        fit: BoxFit.cover,
+                                      ),
                                     ),
-                                  ),
-                                  width: MediaQuery.of(context).size.width,
-                                  height: 60,
-                                  child: Center(
-                                      child: Text(
-                                          currentState.ingredient(index).name,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 24,
-                                          ))),
-                                ));
+                                    width: MediaQuery.of(context).size.width,
+                                    height: 60,
+                                    child: Center(
+                                        child: Text(
+                                            currentState.ingredient(index).name,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 24,
+                                            ))),
+                                  )));
                     },
                   )),
                   Row(

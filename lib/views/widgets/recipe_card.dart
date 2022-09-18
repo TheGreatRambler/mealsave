@@ -72,7 +72,7 @@ class RecipeCard extends StatelessWidget {
                     child: Row(
                       children: [
                         const Icon(
-                          Icons.star,
+                          Icons.attach_money,
                           color: Colors.yellow,
                           size: 18,
                         ),
@@ -93,12 +93,15 @@ class RecipeCard extends StatelessWidget {
                     child: Row(
                       children: [
                         const Icon(
-                          Icons.schedule,
+                          Icons.feed,
                           color: Colors.yellow,
                           size: 18,
                         ),
                         const SizedBox(width: 7),
-                        Text("${recipe.cookMinutes} minutes"),
+                        Text(recipe.url
+                            .split("/")
+                            .where((element) => element.isNotEmpty)
+                            .last),
                       ],
                     ),
                   )

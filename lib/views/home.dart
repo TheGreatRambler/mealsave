@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:mealsave/views/widgets/recipe_card.dart';
 import 'package:mealsave/views/widgets/modify_recipe.dart';
@@ -5,6 +7,7 @@ import 'package:mealsave/views/widgets/modify_ingredients.dart';
 import 'package:mealsave/views/state.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:file_picker/file_picker.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -157,6 +160,38 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   },
                   tooltip: "Add recipe",
                   child: const Icon(Icons.add),
+                ),
+                FloatingActionButton(
+                  heroTag: null,
+                  onPressed: () async {
+                    FilePickerResult? result =
+                        await FilePicker.platform.pickFiles();
+                    if (result != null && result.files.single.path != null) {
+                      var file = File(result.files.single.path!);
+                      if (await currentState.loadBackupRecipe(file)) {
+                        // Success, return early so the error dialog doesn't appear
+                        return;
+                      }
+                    }
+
+                    // If this was reached, there is an error
+                    await showDialog<String>(
+                      context: context,
+                      builder: (BuildContext context) => AlertDialog(
+                        title: const Text("Recipe not loaded"),
+                        content: const Text(
+                            "Loading recipe from backup did not succeed"),
+                        actions: <Widget>[
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text("OK"),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  tooltip: "Load recipe from backup",
+                  child: const Icon(Icons.file_open),
                 ),
               ],
             ),

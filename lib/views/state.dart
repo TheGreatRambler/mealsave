@@ -78,8 +78,19 @@ class CurrentState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> backupRecipe(Recipe recipe) async {
-    await recipeDatabase.getRecipeBackup(recipe);
+  Future<String?> backupRecipe(Recipe recipe) async {
+    return await recipeDatabase.getRecipeBackup(recipe);
+  }
+
+  Future<bool> loadBackupRecipe(File path) async {
+    var readRecipes = await recipeDatabase.loadBackupRecipe(path);
+
+    // Add to our ingredients and recipes
+    ingredients += readRecipes.returnedIngredients;
+    recipes += readRecipes.returnedRecipes;
+
+    notifyListeners();
+    return true;
   }
 
   int numRecipes() {
@@ -140,6 +151,35 @@ class CurrentState extends ChangeNotifier {
     );
   }
 
+  InputDecoration getURLDecoration(
+      BuildContext context, String hintText, void Function() callback) {
+    return InputDecoration(
+      labelText: hintText,
+      labelStyle: TextStyle(
+          color: Theme.of(context).brightness == Brightness.light
+              ? Colors.black
+              : Colors.white),
+      enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(
+            color: Theme.of(context).brightness == Brightness.light
+                ? Colors.black
+                : Colors.white,
+            width: 1.0),
+      ),
+      border: OutlineInputBorder(
+        borderSide: BorderSide(
+            color: Theme.of(context).brightness == Brightness.light
+                ? Colors.black
+                : Colors.white,
+            width: 1.0),
+      ),
+      suffixIcon: IconButton(
+        icon: const Icon(Icons.open_in_browser),
+        onPressed: callback,
+      ),
+    );
+  }
+
   InputDecoration getDropdownDecoration(BuildContext context, String hintText) {
     return InputDecoration(
       labelText: hintText,
@@ -184,7 +224,7 @@ class PluginAccess {
 class Recipe {
   int? id = null;
   String name = "";
-  int cookMinutes = 0;
+  String url = "";
   double expectedServings = 0.0;
   List<Ingredient> ingredients = [];
   Uint8List image = getDefaultImage();
@@ -204,7 +244,7 @@ class Recipe {
     var entry = <String, Object?>{
       "name": name,
       "expected_servings": expectedServings,
-      "cook_minutes": cookMinutes,
+      "url": url,
       "thumbnail": image,
     };
 
@@ -223,7 +263,7 @@ class Recipe {
       id: (map["_id"] ?? 0) as int,
       name: (map["name"] ?? "") as String,
       expectedServings: (map["expected_servings"] ?? 0.0) as double,
-      cookMinutes: (map["cook_minutes"] ?? 0) as int,
+      url: (map["url"] ?? "") as String,
       image: (map["thumbnail"] ?? getDefaultImage()) as Uint8List,
       ingredients: ingredients,
     );
@@ -235,7 +275,7 @@ class Recipe {
       id: null,
       name: "",
       expectedServings: 0,
-      cookMinutes: 0,
+      url: "",
       image: getDefaultImage(),
       ingredients: <Ingredient>[],
     );
@@ -245,7 +285,7 @@ class Recipe {
     this.id,
     required this.name,
     required this.expectedServings,
-    required this.cookMinutes,
+    required this.url,
     required this.image,
     required this.ingredients,
   });
@@ -581,6 +621,15 @@ Uint8List getDefaultImage() {
   return Uint8List.fromList(img.encodePng(image));
 }
 
+// The result of reading a backup
+class BackupRecipe {
+  List<StoreIngredient> returnedIngredients;
+  List<Recipe> returnedRecipes;
+
+  BackupRecipe(
+      {required this.returnedIngredients, required this.returnedRecipes});
+}
+
 class RecipeDatabase {
   Database? db = null;
 
@@ -593,7 +642,7 @@ CREATE TABLE IF NOT EXISTS recipes (
     _id integer primary key autoincrement, 
     name text not null,
     expected_servings real not null,
-    cook_minutes integer not null,
+    url integer not null,
     thumbnail blob not null)
 ''');
 
@@ -662,37 +711,41 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
     return recipe;
   }
 
-  Future<Uint8List> getRecipeBackup(Recipe recipe) async {
+  Future<String?> getRecipeBackup(Recipe recipe) async {
     var canAccessExternalStorage = await Permission.storage.request().isGranted;
     if (!canAccessExternalStorage) {
       // Uh oh
-      return Uint8List(0);
+      return "";
     }
 
     // Create new database for this backup
-    final DateFormat dateFormatter = DateFormat("yyyy-MM-dd-H:m:s");
+    // Note: Certain charactors in the recipe name WILL NOT SAVE! (question marks are one)
+    final DateFormat dateFormatter = DateFormat("yyyy-MM-dd-H-m-s");
     String databaseName =
-        "${recipe.name}-${dateFormatter.format(DateTime.now())}.db";
-    String basePath = Directory.systemTemp.toString();
-    // This downloads path does NOT go in the main downloads, as far as I can tell
-    var downloadsPath =
-        await getExternalStorageDirectories(type: StorageDirectory.downloads);
-    if (downloadsPath != null) {
-      await downloadsPath[0].create(recursive: true);
-      basePath = downloadsPath[0].path;
+        "mealsave-${recipe.name}-${dateFormatter.format(DateTime.now())}.db";
+
+    // Start with the main downloads (Android)
+    var basePath = Directory("/storage/emulated/0/Download");
+    if (!await basePath.exists()) {
+      basePath = await getExternalStorageDirectory() ??
+          await getApplicationDocumentsDirectory();
     }
-    String databasePath = join(basePath, databaseName);
 
-    //print("Database path: $databasePath");
+    await basePath.create(recursive: true);
+    String databasePath = join(basePath.path, databaseName);
 
-    await openDatabase(databasePath, version: 1,
-        onCreate: (Database backupDb, int version) async {
+    var backupDb = await openDatabase(databasePath, version: 1,
+        onConfigure: (Database backupDb) async {
+      // Disable db-journal
+      // It's an extra file that user's couldn't use
+      await backupDb.rawQuery("PRAGMA journal_mode=MEMORY;");
+    }, onCreate: (Database backupDb, int version) async {
       await backupDb.execute('''
 CREATE TABLE IF NOT EXISTS recipes ( 
     _id integer primary key autoincrement, 
     name text not null,
     expected_servings real not null,
-    cook_minutes integer not null,
+    url text not null,
     thumbnail blob not null)
 ''');
 
@@ -751,11 +804,115 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
           await backupDb.insert("store_ingredients", storeIngredient);
         }
       }
-
-      backupDb.close();
     });
 
-    return Uint8List(0);
+    // Database still can't be deleted immediately after being created
+    // Not sure why
+    await backupDb.close();
+
+    return databasePath;
+  }
+
+  Future<BackupRecipe> loadBackupRecipe(File path) async {
+    if (!await path.exists()) {
+      return BackupRecipe(returnedIngredients: [], returnedRecipes: []);
+    }
+
+    var backupDb = await openDatabase(path.path, version: 1);
+
+    // Get all store ingredients
+    List<Map<String, Object?>> ingredientsMaps =
+        await backupDb.query("store_ingredients", columns: [
+      "_id",
+      "name",
+      "volume_type",
+      "volume_quantity",
+      "price",
+      "thumbnail",
+    ]); //.map((map) => map.);
+    // https://github.com/tekartik/sqflite/issues/195#issuecomment-484528618
+    ingredientsMaps = List<Map<String, dynamic>>.generate(
+        ingredientsMaps.length,
+        (index) => Map<String, dynamic>.from(ingredientsMaps[index]),
+        growable: true);
+
+    List<StoreIngredient> returnedIngredients = [];
+    Map<int, StoreIngredient> ingredientFromID = <int, StoreIngredient>{};
+    Map<int, int> backupIDToActualID = <int, int>{};
+
+    for (var ingredient in ingredientsMaps) {
+      // Load old ID
+      int oldId = ingredient["_id"] as int;
+
+      // Remove this ID
+      ingredient.remove("_id");
+
+      // Generate a new ID for the actual database
+      ingredient["_id"] = await db?.insert("store_ingredients", ingredient);
+      backupIDToActualID[oldId] = ingredient["_id"] as int;
+
+      // Add the store ingredient to the actual store ingredients
+      var ingredientObject = StoreIngredient.fromMap(ingredient);
+      ingredientFromID[ingredient["_id"] as int] = ingredientObject;
+      returnedIngredients.add(ingredientObject);
+    }
+
+    List<Map<String, Object?>> recipes =
+        await backupDb.query("recipes", columns: [
+      "_id",
+      "name",
+      "expected_servings",
+      "url",
+      "thumbnail",
+    ]);
+    recipes = List<Map<String, dynamic>>.generate(
+        recipes.length, (index) => Map<String, dynamic>.from(recipes[index]),
+        growable: true);
+
+    List<Recipe> returnedRecipes = [];
+
+    for (var recipe in recipes) {
+      List<Map<String, Object?>> recipeIngredients =
+          await backupDb.query("recipe_ingredients",
+              columns: [
+                "recipe",
+                "volume_type",
+                "volume_quantity",
+                "store_ingredient",
+              ],
+              where: "recipe = ?",
+              whereArgs: [recipe["_id"] as int]);
+      recipeIngredients = List<Map<String, dynamic>>.generate(
+          recipeIngredients.length,
+          (index) => Map<String, dynamic>.from(recipeIngredients[index]),
+          growable: true);
+
+      recipe.remove("_id");
+      // Finally add the recipe to our database
+      recipe["_id"] = await db?.insert("recipes", recipe);
+
+      List<Ingredient> recipeIngredientObjects = [];
+      for (var recipeIngredient in recipeIngredients) {
+        recipeIngredient["recipe"] = recipe["_id"];
+        recipeIngredient["store_ingredient"] =
+            backupIDToActualID[recipeIngredient["store_ingredient"] as int];
+
+        recipeIngredient["_id"] =
+            await db?.insert("recipe_ingredients", recipeIngredient);
+        recipeIngredientObjects.add(Ingredient.fromMap(
+            recipeIngredient,
+            ingredientFromID[recipeIngredient["store_ingredient"] as int] ??
+                StoreIngredient.createNew()));
+      }
+
+      returnedRecipes.add(Recipe.fromMap(recipe, recipeIngredientObjects));
+    }
+
+    await backupDb.close();
+
+    return BackupRecipe(
+        returnedIngredients: returnedIngredients,
+        returnedRecipes: returnedRecipes);
   }
 
   Future<List<Recipe>> getAllRecipes(List<StoreIngredient> ingredients) async {
@@ -763,7 +920,7 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
       "_id",
       "name",
       "expected_servings",
-      "cook_minutes",
+      "url",
       "thumbnail",
     ]);
 
