@@ -2,6 +2,7 @@ import 'dart:ffi';
 import 'dart:typed_data';
 import 'dart:developer';
 import 'dart:io';
+import 'package:http/http.dart' as http;
 
 import 'package:sqflite/sqflite.dart';
 import 'package:fling_units/fling_units.dart';
@@ -12,11 +13,14 @@ import 'package:path/path.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart';
+import 'package:network_tools/network_tools.dart';
 
 class CurrentState extends ChangeNotifier {
   final RecipeDatabase recipeDatabase = RecipeDatabase();
   List<Recipe> recipes = [];
   List<StoreIngredient> ingredients = [];
+  String? serverIp;
   bool hasLoaded = false;
 
   Future<void> loadDatabase() async {
@@ -24,6 +28,11 @@ class CurrentState extends ChangeNotifier {
       await recipeDatabase.open("recipes.db");
       ingredients = await recipeDatabase.getAllIngredients();
       recipes = await recipeDatabase.getAllRecipes(ingredients);
+
+      if (kReleaseMode) {
+        serverIp = "mealsave.io";
+      }
+
       hasLoaded = true;
       notifyListeners();
     }
@@ -78,6 +87,42 @@ class CurrentState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> ensureServerAvailable() async {
+    if (!kReleaseMode && serverIp == null) {
+      // Scan for local IP of dev server on my LAN
+      await HostScanner.scanDevicesForSinglePort("10.0.0", 3000, progressCallback: (progress) {
+        null;
+      }).listen((host) {
+        serverIp = "${host.address}:3000";
+      }).asFuture();
+    }
+    return;
+  }
+
+  Future<void> attemptUploadIngredientImage(StoreIngredient ingredient) async {
+    if (ingredient.id != null) {
+      await ensureServerAvailable();
+
+      var res = await http.post(
+        Uri.parse("http://$serverIp/updates/image"),
+        // "User" is TODO
+        headers: <String, String>{
+          "Content-Type": "image/png",
+          "Image-Type": "ingredient",
+          "User": 0.toString(),
+          "Id": ingredient.id.toString()
+        },
+        body: ingredient.image,
+      );
+
+      if (res.statusCode != 202) {
+        // TODO
+      }
+    } else {
+      // TODO
+    }
+  }
+
   Future<String?> backupRecipe(Recipe recipe) async {
     return await recipeDatabase.getRecipeBackup(recipe);
   }
@@ -110,8 +155,7 @@ class CurrentState extends ChangeNotifier {
   }
 
   // Retrieve some common UI elements
-  InputDecoration getTextInputDecoration(
-      BuildContext context, String hintText) {
+  InputDecoration getTextInputDecoration(BuildContext context, String hintText) {
     return InputDecoration(
       labelText: hintText,
       labelStyle: const TextStyle(color: Colors.black),
@@ -126,52 +170,32 @@ class CurrentState extends ChangeNotifier {
     );
   }
 
-  InputDecoration getTextInputDecorationNormal(
-      BuildContext context, String hintText) {
+  InputDecoration getTextInputDecorationNormal(BuildContext context, String hintText) {
     return InputDecoration(
       labelText: hintText,
-      labelStyle: TextStyle(
-          color: Theme.of(context).brightness == Brightness.light
-              ? Colors.black
-              : Colors.white),
+      labelStyle: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white),
       enabledBorder: OutlineInputBorder(
         borderSide: BorderSide(
-            color: Theme.of(context).brightness == Brightness.light
-                ? Colors.black
-                : Colors.white,
-            width: 1.0),
+            color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white, width: 1.0),
       ),
       border: OutlineInputBorder(
         borderSide: BorderSide(
-            color: Theme.of(context).brightness == Brightness.light
-                ? Colors.black
-                : Colors.white,
-            width: 1.0),
+            color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white, width: 1.0),
       ),
     );
   }
 
-  InputDecoration getURLDecoration(
-      BuildContext context, String hintText, void Function() callback) {
+  InputDecoration getURLDecoration(BuildContext context, String hintText, void Function() callback) {
     return InputDecoration(
       labelText: hintText,
-      labelStyle: TextStyle(
-          color: Theme.of(context).brightness == Brightness.light
-              ? Colors.black
-              : Colors.white),
+      labelStyle: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white),
       enabledBorder: OutlineInputBorder(
         borderSide: BorderSide(
-            color: Theme.of(context).brightness == Brightness.light
-                ? Colors.black
-                : Colors.white,
-            width: 1.0),
+            color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white, width: 1.0),
       ),
       border: OutlineInputBorder(
         borderSide: BorderSide(
-            color: Theme.of(context).brightness == Brightness.light
-                ? Colors.black
-                : Colors.white,
-            width: 1.0),
+            color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white, width: 1.0),
       ),
       suffixIcon: IconButton(
         icon: const Icon(Icons.open_in_browser),
@@ -186,8 +210,7 @@ class CurrentState extends ChangeNotifier {
       labelStyle: const TextStyle(color: Colors.black),
       filled: true,
       fillColor: const Color.fromARGB(200, 255, 255, 255),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 20.0, vertical: 18.0),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 18.0),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(5.0),
         borderSide: BorderSide(color: Colors.black, width: 1.0),
@@ -482,12 +505,10 @@ class Ingredient {
     return entry;
   }
 
-  static Ingredient fromMap(
-      Map<String, Object?> map, StoreIngredient storeIngredientIn) {
+  static Ingredient fromMap(Map<String, Object?> map, StoreIngredient storeIngredientIn) {
     return Ingredient(
       id: (map["_id"] ?? 0) as int,
-      volumeType: VolumeTypeConversion.fromPrettyString(
-          (map["volume_type"] ?? "Ounces") as String),
+      volumeType: VolumeTypeConversion.fromPrettyString((map["volume_type"] ?? "Ounces") as String),
       volumeQuantity: (map["volume_quantity"] ?? 0.0) as double,
       storeIngredient: storeIngredientIn,
     );
@@ -518,20 +539,16 @@ class Ingredient {
     if (storeIngredient != null) {
       if (storeIngredient!.volumeType == VolumeType.scalar) {
         // Unitless value
-        return volumeQuantity /
-            storeIngredient!.volumeQuantity *
-            storeIngredient!.price;
+        return volumeQuantity / storeIngredient!.volumeQuantity * storeIngredient!.price;
       } else if (volumeType == VolumeType.percentage) {
         // Simply returns a percentage of the store ingredient price
         return volumeQuantity / 100 * storeIngredient!.price;
       } else {
         var thisVolume = volumeType.fromQuantity(volumeQuantity);
-        var storeVolume = storeIngredient!.volumeType
-            .fromQuantity(storeIngredient!.volumeQuantity);
+        var storeVolume = storeIngredient!.volumeType.fromQuantity(storeIngredient!.volumeQuantity);
         // Need consistent unit to divide, can't divide units by each other
         // Limitation of fling_units
-        var ingredientRatio =
-            thisVolume.asVolume(teaspoons) / storeVolume.asVolume(teaspoons);
+        var ingredientRatio = thisVolume.asVolume(teaspoons) / storeVolume.asVolume(teaspoons);
         return ingredientRatio * storeIngredient!.price;
       }
     } else {
@@ -541,8 +558,7 @@ class Ingredient {
 
   bool isScalar() {
     // Scalar quantities are handled differently, needs a check
-    return storeIngredient != null &&
-        storeIngredient!.volumeType == VolumeType.scalar;
+    return storeIngredient != null && storeIngredient!.volumeType == VolumeType.scalar;
   }
 }
 
@@ -586,8 +602,7 @@ class StoreIngredient {
     return StoreIngredient(
       id: (map["_id"] ?? 0) as int,
       name: (map["name"] ?? "") as String,
-      volumeType: VolumeTypeConversion.fromPrettyString(
-          (map["volume_type"] ?? "Ounces") as String),
+      volumeType: VolumeTypeConversion.fromPrettyString((map["volume_type"] ?? "Ounces") as String),
       volumeQuantity: (map["volume_quantity"] ?? 0.0) as double,
       price: (map["price"] ?? "") as int,
       image: (map["thumbnail"] ?? getDefaultImage()) as Uint8List,
@@ -626,8 +641,7 @@ class BackupRecipe {
   List<StoreIngredient> returnedIngredients;
   List<Recipe> returnedRecipes;
 
-  BackupRecipe(
-      {required this.returnedIngredients, required this.returnedRecipes});
+  BackupRecipe({required this.returnedIngredients, required this.returnedRecipes});
 }
 
 class RecipeDatabase {
@@ -673,8 +687,7 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
   }
 
   Future<List<StoreIngredient>> getAllIngredients() async {
-    List<Map<String, Object?>>? ingredients =
-        await db?.query("store_ingredients", columns: [
+    List<Map<String, Object?>>? ingredients = await db?.query("store_ingredients", columns: [
       "_id",
       "name",
       "volume_type",
@@ -683,20 +696,16 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
       "thumbnail",
     ]);
 
-    return ingredients == null
-        ? []
-        : ingredients.map((map) => StoreIngredient.fromMap(map)).toList();
+    return ingredients == null ? [] : ingredients.map((map) => StoreIngredient.fromMap(map)).toList();
   }
 
   Future<void> deleteIngredient(StoreIngredient ingredient) async {
-    await db?.delete("store_ingredients",
-        where: "_id = ?", whereArgs: [ingredient.id]);
+    await db?.delete("store_ingredients", where: "_id = ?", whereArgs: [ingredient.id]);
     // TODO check if anything is using this store ingredient
   }
 
   Future<void> updateIngredient(StoreIngredient ingredient) async {
-    await db?.update("store_ingredients", ingredient.toMap(),
-        where: "_id = ?", whereArgs: [ingredient.id]);
+    await db?.update("store_ingredients", ingredient.toMap(), where: "_id = ?", whereArgs: [ingredient.id]);
   }
 
   Future<Recipe> insertRecipe(Recipe recipe) async {
@@ -721,21 +730,18 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
     // Create new database for this backup
     // Note: Certain charactors in the recipe name WILL NOT SAVE! (question marks are one)
     final DateFormat dateFormatter = DateFormat("yyyy-MM-dd-H-m-s");
-    String databaseName =
-        "mealsave-${recipe.name}-${dateFormatter.format(DateTime.now())}.db";
+    String databaseName = "mealsave-${recipe.name}-${dateFormatter.format(DateTime.now())}.db";
 
     // Start with the main downloads (Android)
     var basePath = Directory("/storage/emulated/0/Download");
     if (!await basePath.exists()) {
-      basePath = await getExternalStorageDirectory() ??
-          await getApplicationDocumentsDirectory();
+      basePath = await getExternalStorageDirectory() ?? await getApplicationDocumentsDirectory();
     }
 
     await basePath.create(recursive: true);
     String databasePath = join(basePath.path, databaseName);
 
-    var backupDb = await openDatabase(databasePath, version: 1,
-        onConfigure: (Database backupDb) async {
+    var backupDb = await openDatabase(databasePath, version: 1, onConfigure: (Database backupDb) async {
       // Disable db-journal
       // It's an extra file that user's couldn't use
       await backupDb.rawQuery("PRAGMA journal_mode=MEMORY;");
@@ -771,34 +777,32 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
       // Insert into backup
       await backupDb.insert("recipes", recipe.toMap());
 
-      List<Map<String, Object?>> recipeIngredients =
-          await db?.query("recipe_ingredients",
-                  columns: [
-                    "_id",
-                    "recipe",
-                    "volume_type",
-                    "volume_quantity",
-                    "store_ingredient",
-                  ],
-                  where: "recipe = ?",
-                  whereArgs: [recipe.id]) ??
-              [];
+      List<Map<String, Object?>> recipeIngredients = await db?.query("recipe_ingredients",
+              columns: [
+                "_id",
+                "recipe",
+                "volume_type",
+                "volume_quantity",
+                "store_ingredient",
+              ],
+              where: "recipe = ?",
+              whereArgs: [recipe.id]) ??
+          [];
 
       for (var recipeIngredient in recipeIngredients) {
         await backupDb.insert("recipe_ingredients", recipeIngredient);
-        List<Map<String, Object?>> storeIngredients =
-            await db?.query("store_ingredients",
-                    columns: [
-                      "_id",
-                      "name",
-                      "volume_type",
-                      "volume_quantity",
-                      "price",
-                      "thumbnail",
-                    ],
-                    where: "_id = ?",
-                    whereArgs: [recipeIngredient["store_ingredient"] as int]) ??
-                [];
+        List<Map<String, Object?>> storeIngredients = await db?.query("store_ingredients",
+                columns: [
+                  "_id",
+                  "name",
+                  "volume_type",
+                  "volume_quantity",
+                  "price",
+                  "thumbnail",
+                ],
+                where: "_id = ?",
+                whereArgs: [recipeIngredient["store_ingredient"] as int]) ??
+            [];
 
         for (var storeIngredient in storeIngredients) {
           await backupDb.insert("store_ingredients", storeIngredient);
@@ -821,8 +825,7 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
     var backupDb = await openDatabase(path.path, version: 1);
 
     // Get all store ingredients
-    List<Map<String, Object?>> ingredientsMaps =
-        await backupDb.query("store_ingredients", columns: [
+    List<Map<String, Object?>> ingredientsMaps = await backupDb.query("store_ingredients", columns: [
       "_id",
       "name",
       "volume_type",
@@ -832,8 +835,7 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
     ]); //.map((map) => map.);
     // https://github.com/tekartik/sqflite/issues/195#issuecomment-484528618
     ingredientsMaps = List<Map<String, dynamic>>.generate(
-        ingredientsMaps.length,
-        (index) => Map<String, dynamic>.from(ingredientsMaps[index]),
+        ingredientsMaps.length, (index) => Map<String, dynamic>.from(ingredientsMaps[index]),
         growable: true);
 
     List<StoreIngredient> returnedIngredients = [];
@@ -857,34 +859,30 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
       returnedIngredients.add(ingredientObject);
     }
 
-    List<Map<String, Object?>> recipes =
-        await backupDb.query("recipes", columns: [
+    List<Map<String, Object?>> recipes = await backupDb.query("recipes", columns: [
       "_id",
       "name",
       "expected_servings",
       "url",
       "thumbnail",
     ]);
-    recipes = List<Map<String, dynamic>>.generate(
-        recipes.length, (index) => Map<String, dynamic>.from(recipes[index]),
+    recipes = List<Map<String, dynamic>>.generate(recipes.length, (index) => Map<String, dynamic>.from(recipes[index]),
         growable: true);
 
     List<Recipe> returnedRecipes = [];
 
     for (var recipe in recipes) {
-      List<Map<String, Object?>> recipeIngredients =
-          await backupDb.query("recipe_ingredients",
-              columns: [
-                "recipe",
-                "volume_type",
-                "volume_quantity",
-                "store_ingredient",
-              ],
-              where: "recipe = ?",
-              whereArgs: [recipe["_id"] as int]);
+      List<Map<String, Object?>> recipeIngredients = await backupDb.query("recipe_ingredients",
+          columns: [
+            "recipe",
+            "volume_type",
+            "volume_quantity",
+            "store_ingredient",
+          ],
+          where: "recipe = ?",
+          whereArgs: [recipe["_id"] as int]);
       recipeIngredients = List<Map<String, dynamic>>.generate(
-          recipeIngredients.length,
-          (index) => Map<String, dynamic>.from(recipeIngredients[index]),
+          recipeIngredients.length, (index) => Map<String, dynamic>.from(recipeIngredients[index]),
           growable: true);
 
       recipe.remove("_id");
@@ -894,15 +892,11 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
       List<Ingredient> recipeIngredientObjects = [];
       for (var recipeIngredient in recipeIngredients) {
         recipeIngredient["recipe"] = recipe["_id"];
-        recipeIngredient["store_ingredient"] =
-            backupIDToActualID[recipeIngredient["store_ingredient"] as int];
+        recipeIngredient["store_ingredient"] = backupIDToActualID[recipeIngredient["store_ingredient"] as int];
 
-        recipeIngredient["_id"] =
-            await db?.insert("recipe_ingredients", recipeIngredient);
-        recipeIngredientObjects.add(Ingredient.fromMap(
-            recipeIngredient,
-            ingredientFromID[recipeIngredient["store_ingredient"] as int] ??
-                StoreIngredient.createNew()));
+        recipeIngredient["_id"] = await db?.insert("recipe_ingredients", recipeIngredient);
+        recipeIngredientObjects.add(Ingredient.fromMap(recipeIngredient,
+            ingredientFromID[recipeIngredient["store_ingredient"] as int] ?? StoreIngredient.createNew()));
       }
 
       returnedRecipes.add(Recipe.fromMap(recipe, recipeIngredientObjects));
@@ -910,9 +904,7 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
 
     await backupDb.close();
 
-    return BackupRecipe(
-        returnedIngredients: returnedIngredients,
-        returnedRecipes: returnedRecipes);
+    return BackupRecipe(returnedIngredients: returnedIngredients, returnedRecipes: returnedRecipes);
   }
 
   Future<List<Recipe>> getAllRecipes(List<StoreIngredient> ingredients) async {
@@ -940,24 +932,21 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
       // Around 100kb
       //print("Size of thumbnail: ${(recipe["thumbnail"] as Uint8List).length}");
 
-      List<Map<String, Object?>>? recipeIngredients =
-          await db?.query("recipe_ingredients",
-              columns: [
-                "_id",
-                "recipe",
-                "volume_type",
-                "volume_quantity",
-                "store_ingredient",
-              ],
-              where: "recipe = ?",
-              whereArgs: [recipe["_id"] as int]);
+      List<Map<String, Object?>>? recipeIngredients = await db?.query("recipe_ingredients",
+          columns: [
+            "_id",
+            "recipe",
+            "volume_type",
+            "volume_quantity",
+            "store_ingredient",
+          ],
+          where: "recipe = ?",
+          whereArgs: [recipe["_id"] as int]);
 
       if (recipeIngredients != null) {
         var ingredients = recipeIngredients
             .map((map) => Ingredient.fromMap(
-                map,
-                ingredientsFromID[map["store_ingredient"] as int] ??
-                    StoreIngredient.createNew()))
+                map, ingredientsFromID[map["store_ingredient"] as int] ?? StoreIngredient.createNew()))
             .toList();
         returnedRecipes.add(Recipe.fromMap(recipe, ingredients));
       } else {
@@ -970,13 +959,11 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
 
   Future<void> deleteRecipe(Recipe recipe) async {
     await db?.delete("recipes", where: "_id = ?", whereArgs: [recipe.id]);
-    await db?.delete("recipe_ingredients",
-        where: "recipe = ?", whereArgs: [recipe.id]);
+    await db?.delete("recipe_ingredients", where: "recipe = ?", whereArgs: [recipe.id]);
   }
 
   Future<void> updateRecipe(Recipe recipe) async {
-    await db?.update("recipes", recipe.toMap(),
-        where: "_id = ?", whereArgs: [recipe.id]);
+    await db?.update("recipes", recipe.toMap(), where: "_id = ?", whereArgs: [recipe.id]);
 
     // Intelligently handle all recipe ingredients
     List<int> includedIngredients = <int>[];
@@ -987,8 +974,7 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
         ingredient.id = await db?.insert("recipe_ingredients", ingredientMap);
       } else {
         // Just in case it needs updating
-        await db?.update("recipe_ingredients", ingredientMap,
-            where: "_id = ?", whereArgs: [ingredient.id]);
+        await db?.update("recipe_ingredients", ingredientMap, where: "_id = ?", whereArgs: [ingredient.id]);
       }
       includedIngredients.add(ingredient.id!);
       // Not responsible for store ingredients here
@@ -996,8 +982,7 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
 
     // Remove unused recipe ingredients
     await db?.delete("recipe_ingredients",
-        where: "_id NOT IN (${includedIngredients.join(', ')}) AND recipe = ?",
-        whereArgs: [recipe.id]);
+        where: "_id NOT IN (${includedIngredients.join(', ')}) AND recipe = ?", whereArgs: [recipe.id]);
   }
 
   Future close() async => db?.close();

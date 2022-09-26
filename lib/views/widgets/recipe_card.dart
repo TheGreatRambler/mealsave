@@ -77,9 +77,7 @@ class RecipeCard extends StatelessWidget {
                           size: 18,
                         ),
                         const SizedBox(width: 7),
-                        Text(Money.fromInt(recipe.getPricePerServing(),
-                                code: "USD")
-                            .format("#.00S")),
+                        Text(Money.fromInt(recipe.getPricePerServing(), code: "USD").format("#.00S")),
                       ],
                     ),
                   ),
@@ -98,10 +96,7 @@ class RecipeCard extends StatelessWidget {
                           size: 18,
                         ),
                         const SizedBox(width: 7),
-                        Text(recipe.url
-                            .split("/")
-                            .where((element) => element.isNotEmpty)
-                            .last),
+                        Text(recipe.url.split("/").where((element) => element.isNotEmpty).last),
                       ],
                     ),
                   )
@@ -113,8 +108,7 @@ class RecipeCard extends StatelessWidget {
       ),
       onTap: () {
         Navigator.of(context).push(PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              ModifyRecipeMenu(
+          pageBuilder: (context, animation, secondaryAnimation) => ModifyRecipeMenu(
             newRecipe: false,
             recipe: recipe,
           ),
@@ -123,8 +117,7 @@ class RecipeCard extends StatelessWidget {
             const end = Offset.zero;
             const curve = Curves.ease;
 
-            var tween =
-                Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
 
             return SlideTransition(
               position: animation.drive(tween),

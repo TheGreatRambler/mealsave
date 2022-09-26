@@ -34,12 +34,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   Future<void> prepareState() async {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      CurrentState currentState =
-          Provider.of<CurrentState>(context, listen: false);
+      CurrentState currentState = Provider.of<CurrentState>(context, listen: false);
       await currentState.loadDatabase();
 
-      PluginAccess pluginAccess =
-          Provider.of<PluginAccess>(context, listen: false);
+      PluginAccess pluginAccess = Provider.of<PluginAccess>(context, listen: false);
       await pluginAccess.loadCamera();
 
       setState(() {
@@ -54,8 +52,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     stateHistory.add(state);
     if (state == AppLifecycleState.inactive) {
       // Remove camera
-      PluginAccess pluginAccess =
-          Provider.of<PluginAccess>(context, listen: false);
+      PluginAccess pluginAccess = Provider.of<PluginAccess>(context, listen: false);
       await pluginAccess.disposeCamera();
     }
   }
@@ -88,17 +85,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         },
                       )
                     : Center(
-                        child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                            const Text(
-                              "Add recipe to begin",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 30),
-                            ),
-                            SvgPicture.asset("images/logo.svg")
-                          ]));
+                        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        const Text(
+                          "Add recipe to begin",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
+                        ),
+                        SvgPicture.asset("images/logo.svg")
+                      ]));
               },
             ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -113,16 +107,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   heroTag: null,
                   onPressed: () {
                     Navigator.of(context).push(PageRouteBuilder(
-                      pageBuilder: (context, animation, secondaryAnimation) =>
-                          ModifyIngredientsMenu(),
-                      transitionsBuilder:
-                          (context, animation, secondaryAnimation, child) {
+                      pageBuilder: (context, animation, secondaryAnimation) => ModifyIngredientsMenu(),
+                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
                         const begin = Offset(-1.0, 0.0);
                         const end = Offset.zero;
                         const curve = Curves.ease;
 
-                        var tween = Tween(begin: begin, end: end)
-                            .chain(CurveTween(curve: curve));
+                        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
 
                         return SlideTransition(
                           position: animation.drive(tween),
@@ -138,18 +129,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   heroTag: null,
                   onPressed: () {
                     Navigator.of(context).push(PageRouteBuilder(
-                      pageBuilder: (context, animation, secondaryAnimation) =>
-                          ModifyRecipeMenu(
+                      pageBuilder: (context, animation, secondaryAnimation) => ModifyRecipeMenu(
                         newRecipe: true,
                       ),
-                      transitionsBuilder:
-                          (context, animation, secondaryAnimation, child) {
+                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
                         const begin = Offset(1.0, 0.0);
                         const end = Offset.zero;
                         const curve = Curves.ease;
 
-                        var tween = Tween(begin: begin, end: end)
-                            .chain(CurveTween(curve: curve));
+                        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
 
                         return SlideTransition(
                           position: animation.drive(tween),
@@ -164,8 +152,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 FloatingActionButton(
                   heroTag: null,
                   onPressed: () async {
-                    FilePickerResult? result =
-                        await FilePicker.platform.pickFiles();
+                    FilePickerResult? result = await FilePicker.platform.pickFiles();
                     if (result != null && result.files.single.path != null) {
                       var file = File(result.files.single.path!);
                       if (await currentState.loadBackupRecipe(file)) {
@@ -179,8 +166,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       context: context,
                       builder: (BuildContext context) => AlertDialog(
                         title: const Text("Recipe not loaded"),
-                        content: const Text(
-                            "Loading recipe from backup did not succeed"),
+                        content: const Text("Loading recipe from backup did not succeed"),
                         actions: <Widget>[
                           TextButton(
                             onPressed: () => Navigator.pop(context),

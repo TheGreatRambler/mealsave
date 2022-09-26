@@ -66,8 +66,7 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                       TextFormField(
                         initialValue: recipe.name,
                         keyboardType: TextInputType.text,
-                        decoration: currentState.getTextInputDecorationNormal(
-                            context, "Name"),
+                        decoration: currentState.getTextInputDecorationNormal(context, "Name"),
                         onFieldSubmitted: (value) {
                           setState(() {
                             recipe.name = value;
@@ -93,20 +92,15 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                               child: TextFormField(
                             initialValue: recipe.url,
                             keyboardType: TextInputType.text,
-                            decoration: currentState
-                                .getURLDecoration(context, "URL", () {
+                            decoration: currentState.getURLDecoration(context, "URL", () {
                               Navigator.of(context).push(PageRouteBuilder(
-                                pageBuilder:
-                                    (context, animation, secondaryAnimation) =>
-                                        BrowserView(url: recipe.url),
-                                transitionsBuilder: (context, animation,
-                                    secondaryAnimation, child) {
+                                pageBuilder: (context, animation, secondaryAnimation) => BrowserView(url: recipe.url),
+                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
                                   const begin = Offset(1.0, 0.0);
                                   const end = Offset.zero;
                                   const curve = Curves.ease;
 
-                                  var tween = Tween(begin: begin, end: end)
-                                      .chain(CurveTween(curve: curve));
+                                  var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
 
                                   return SlideTransition(
                                     position: animation.drive(tween),
@@ -133,17 +127,11 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                           Expanded(
                               child: TextFormField(
                             key: Key(recipe.expectedServings.toString()),
-                            initialValue: recipe.expectedServings == 0.0
-                                ? null
-                                : recipe.expectedServings.toString(),
+                            initialValue: recipe.expectedServings == 0.0 ? null : recipe.expectedServings.toString(),
                             readOnly: true,
-                            decoration:
-                                currentState.getTextInputDecorationNormal(
-                                    context, "Servings Produced"),
+                            decoration: currentState.getTextInputDecorationNormal(context, "Servings Produced"),
                             validator: (value) {
-                              if (value == null ||
-                                  value.isEmpty ||
-                                  double.tryParse(value) == null) {
+                              if (value == null || value.isEmpty || double.tryParse(value) == null) {
                                 return "Not a number";
                               } else if (double.tryParse(value) == 0.0) {
                                 return "Cannot be zero";
@@ -151,11 +139,7 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                             },
                             onTap: () async {
                               var returnedValue = await openNumberDialog(
-                                  context,
-                                  0,
-                                  4294967295,
-                                  recipe.expectedServings,
-                                  const Text("Servings Produced"));
+                                  context, 0, 4294967295, recipe.expectedServings, const Text("Servings Produced"));
 
                               if (returnedValue != null) {
                                 setState(() {
@@ -173,22 +157,16 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                         children: [
                           Expanded(
                               child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                                minimumSize: const Size.fromHeight(60)),
+                            style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(60)),
                             onPressed: () async {
-                              final picture = await Navigator.of(context)
-                                  .push(PageRouteBuilder(
-                                pageBuilder:
-                                    (context, animation, secondaryAnimation) =>
-                                        CameraView(),
-                                transitionsBuilder: (context, animation,
-                                    secondaryAnimation, child) {
+                              final picture = await Navigator.of(context).push(PageRouteBuilder(
+                                pageBuilder: (context, animation, secondaryAnimation) => CameraView(),
+                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
                                   const begin = Offset(0.0, 1.0);
                                   const end = Offset.zero;
                                   const curve = Curves.ease;
 
-                                  var tween = Tween(begin: begin, end: end)
-                                      .chain(CurveTween(curve: curve));
+                                  var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
 
                                   return SlideTransition(
                                     position: animation.drive(tween),
@@ -200,8 +178,7 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                               // Assign picture to ingredient
                               if (picture != null) {
                                 setState(() {
-                                  recipe.image = Uint8List.fromList(
-                                      img.encodePng(picture));
+                                  recipe.image = Uint8List.fromList(img.encodePng(picture));
                                 });
                               }
                             },
@@ -210,16 +187,13 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                           const SizedBox(width: 8.0),
                           Expanded(
                               child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                                minimumSize: const Size.fromHeight(60)),
+                            style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(60)),
                             onPressed: () async {
-                              var name =
-                                  await currentState.backupRecipe(recipe);
+                              var name = await currentState.backupRecipe(recipe);
                               if (name != null) {
                                 await showDialog<String>(
                                   context: context,
-                                  builder: (BuildContext context) =>
-                                      AlertDialog(
+                                  builder: (BuildContext context) => AlertDialog(
                                     title: const Text("Recipe saved"),
                                     content: Text("Saved to $name"),
                                     actions: <Widget>[
@@ -233,8 +207,7 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                               } else {
                                 await showDialog<String>(
                                   context: context,
-                                  builder: (BuildContext context) =>
-                                      AlertDialog(
+                                  builder: (BuildContext context) => AlertDialog(
                                     title: const Text("Error"),
                                     content: const Text("Recipe not saved"),
                                     actions: <Widget>[
@@ -253,13 +226,11 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                           Expanded(
                               child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                                primary:
-                                    const Color.fromARGB(255, 255, 107, 107),
+                                primary: const Color.fromARGB(255, 255, 107, 107),
                                 minimumSize: const Size.fromHeight(60)),
                             onPressed: () {
                               var runAsync = () async {
-                                await currentState.removeRecipe(
-                                    recipe, newRecipe);
+                                await currentState.removeRecipe(recipe, newRecipe);
                               }();
 
                               runAsync.then((value) {
@@ -282,8 +253,7 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                           return GestureDetector(
                               onTap: () {
                                 setState(() {
-                                  recipe.ingredients[index].showEditView =
-                                      !recipe.ingredients[index].showEditView;
+                                  recipe.ingredients[index].showEditView = !recipe.ingredients[index].showEditView;
                                 });
                               },
                               child: recipe.ingredients[index].showEditView
@@ -292,83 +262,54 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                           padding: const EdgeInsets.all(8.0),
                                           decoration: BoxDecoration(
                                             border: Border.all(
-                                              color: Theme.of(context)
-                                                          .brightness ==
-                                                      Brightness.light
+                                              color: Theme.of(context).brightness == Brightness.light
                                                   ? Colors.black
                                                   : Colors.white,
                                               style: BorderStyle.solid,
                                               width: 1.0,
                                             ),
-                                            borderRadius:
-                                                const BorderRadius.all(
-                                                    Radius.circular(5.0)),
+                                            borderRadius: const BorderRadius.all(Radius.circular(5.0)),
                                             image: DecorationImage(
-                                              image: MemoryImage(recipe
-                                                      .ingredients[index]
-                                                      .storeIngredient
-                                                      ?.image ??
-                                                  StoreIngredient.createNew()
-                                                      .image),
+                                              image: MemoryImage(recipe.ingredients[index].storeIngredient?.image ??
+                                                  StoreIngredient.createNew().image),
                                               fit: BoxFit.cover,
                                             ),
                                           ),
                                           child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceEvenly,
+                                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                DropdownButtonFormField<
-                                                    StoreIngredient>(
-                                                  style: const TextStyle(
-                                                      color: Colors.black),
+                                                DropdownButtonFormField<StoreIngredient>(
+                                                  style: const TextStyle(color: Colors.black),
                                                   dropdownColor: Colors.white,
-                                                  decoration: currentState
-                                                      .getDropdownDecoration(
-                                                          context,
-                                                          "Ingredient"),
-                                                  value: recipe
-                                                      .ingredients[index]
-                                                      .storeIngredient,
-                                                  icon: const Icon(
-                                                      Icons.arrow_downward,
-                                                      color: Colors.black),
+                                                  decoration: currentState.getDropdownDecoration(context, "Ingredient"),
+                                                  value: recipe.ingredients[index].storeIngredient,
+                                                  icon: const Icon(Icons.arrow_downward, color: Colors.black),
                                                   elevation: 16,
                                                   validator: (value) {
                                                     if (value == null) {
                                                       return "No ingredient chosen";
                                                     }
                                                   },
-                                                  onChanged:
-                                                      (StoreIngredient? value) {
+                                                  onChanged: (StoreIngredient? value) {
                                                     if (value != null) {
                                                       setState(() {
-                                                        recipe
-                                                            .ingredients[index]
-                                                            .storeIngredient = value;
+                                                        recipe.ingredients[index].storeIngredient = value;
                                                       });
                                                     }
                                                   },
-                                                  items: currentState
-                                                      .ingredients
-                                                      .map<
-                                                              DropdownMenuItem<
-                                                                  StoreIngredient>>(
-                                                          (StoreIngredient
-                                                              value) {
-                                                    return DropdownMenuItem<
-                                                        StoreIngredient>(
+                                                  items: currentState.ingredients
+                                                      .map<DropdownMenuItem<StoreIngredient>>((StoreIngredient value) {
+                                                    return DropdownMenuItem<StoreIngredient>(
                                                       value: value,
                                                       child: Text(
                                                         value.name,
                                                         style: const TextStyle(
                                                           fontSize: 19,
                                                         ),
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
+                                                        overflow: TextOverflow.ellipsis,
                                                         maxLines: 1,
-                                                        textAlign:
-                                                            TextAlign.center,
+                                                        textAlign: TextAlign.center,
                                                       ),
                                                     );
                                                   }).toList(),
@@ -378,145 +319,76 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                                 ),
                                                 Row(
                                                   children: [
-                                                    recipe.ingredients[index]
-                                                            .isScalar()
-                                                        ? const SizedBox
-                                                            .shrink()
+                                                    recipe.ingredients[index].isScalar()
+                                                        ? const SizedBox.shrink()
                                                         : Expanded(
-                                                            child:
-                                                                DropdownButtonFormField<
-                                                                    VolumeType>(
-                                                              style: const TextStyle(
-                                                                  color: Colors
-                                                                      .black),
-                                                              dropdownColor:
-                                                                  Colors.white,
-                                                              decoration: currentState
-                                                                  .getDropdownDecoration(
-                                                                      context,
-                                                                      "Quantity Type"),
-                                                              value: recipe
-                                                                  .ingredients[
-                                                                      index]
-                                                                  .volumeType,
-                                                              icon: const Icon(
-                                                                  Icons
-                                                                      .arrow_downward,
-                                                                  color: Colors
-                                                                      .black),
+                                                            child: DropdownButtonFormField<VolumeType>(
+                                                              style: const TextStyle(color: Colors.black),
+                                                              dropdownColor: Colors.white,
+                                                              decoration: currentState.getDropdownDecoration(
+                                                                  context, "Quantity Type"),
+                                                              value: recipe.ingredients[index].volumeType,
+                                                              icon:
+                                                                  const Icon(Icons.arrow_downward, color: Colors.black),
                                                               elevation: 16,
-                                                              validator:
-                                                                  (value) {
-                                                                if (value ==
-                                                                    null) {
+                                                              validator: (value) {
+                                                                if (value == null) {
                                                                   return "No ingredient chosen";
                                                                 }
                                                               },
-                                                              onChanged:
-                                                                  (VolumeType?
-                                                                      value) {
+                                                              onChanged: (VolumeType? value) {
                                                                 setState(() {
-                                                                  recipe
-                                                                      .ingredients[
-                                                                          index]
-                                                                      .changeType(
-                                                                          value ??
-                                                                              VolumeType.ounce);
+                                                                  recipe.ingredients[index]
+                                                                      .changeType(value ?? VolumeType.ounce);
                                                                 });
                                                               },
-                                                              items: VolumeType
-                                                                  .values
-                                                                  .where((value) =>
-                                                                      value !=
-                                                                      VolumeType
-                                                                          .scalar)
+                                                              items: VolumeType.values
+                                                                  .where((value) => value != VolumeType.scalar)
                                                                   .map<DropdownMenuItem<VolumeType>>(
-                                                                      (VolumeType
-                                                                          value) {
-                                                                return DropdownMenuItem<
-                                                                    VolumeType>(
+                                                                      (VolumeType value) {
+                                                                return DropdownMenuItem<VolumeType>(
                                                                   value: value,
-                                                                  child: Text(value
-                                                                      .toPrettyString()),
+                                                                  child: Text(value.toPrettyString()),
                                                                 );
                                                               }).toList(),
                                                             ),
                                                           ),
-                                                    recipe.ingredients[index]
-                                                            .isScalar()
-                                                        ? const SizedBox
-                                                            .shrink()
-                                                        : const SizedBox(
-                                                            width: 8.0),
+                                                    recipe.ingredients[index].isScalar()
+                                                        ? const SizedBox.shrink()
+                                                        : const SizedBox(width: 8.0),
                                                     Expanded(
                                                       child: TextFormField(
                                                         // To get initialValue to update
-                                                        key: Key(recipe
-                                                            .ingredients[index]
-                                                            .volumeQuantity
-                                                            .toString()),
-                                                        initialValue: recipe
-                                                                    .ingredients[
-                                                                        index]
-                                                                    .volumeQuantity ==
-                                                                0.0
+                                                        key: Key(recipe.ingredients[index].volumeQuantity.toString()),
+                                                        initialValue: recipe.ingredients[index].volumeQuantity == 0.0
                                                             ? null
-                                                            : recipe
-                                                                .ingredients[
-                                                                    index]
-                                                                .volumeQuantity
-                                                                .toStringAsFixed(
-                                                                    2),
+                                                            : recipe.ingredients[index].volumeQuantity
+                                                                .toStringAsFixed(2),
                                                         readOnly: true,
-                                                        style: const TextStyle(
-                                                            color:
-                                                                Colors.black),
-                                                        decoration: currentState
-                                                            .getTextInputDecoration(
-                                                                context,
-                                                                recipe
-                                                                    .ingredients[
-                                                                        index]
-                                                                    .volumeType
-                                                                    .getProperLabel()),
+                                                        style: const TextStyle(color: Colors.black),
+                                                        decoration: currentState.getTextInputDecoration(context,
+                                                            recipe.ingredients[index].volumeType.getProperLabel()),
                                                         validator: (value) {
                                                           if (value == null ||
                                                               value.isEmpty ||
-                                                              double.tryParse(
-                                                                      value) ==
-                                                                  null) {
+                                                              double.tryParse(value) == null) {
                                                             return "Not a number";
-                                                          } else if (double
-                                                                  .tryParse(
-                                                                      value) ==
-                                                              0.0) {
+                                                          } else if (double.tryParse(value) == 0.0) {
                                                             return "Cannot be zero";
                                                           }
                                                         },
                                                         onTap: () async {
-                                                          var returnedValue =
-                                                              await openNumberDialog(
-                                                                  context,
-                                                                  0,
-                                                                  4294967295,
-                                                                  recipe
-                                                                      .ingredients[
-                                                                          index]
-                                                                      .volumeQuantity,
-                                                                  Text(recipe
-                                                                      .ingredients[
-                                                                          index]
-                                                                      .volumeType
-                                                                      .getProperLabel()));
+                                                          var returnedValue = await openNumberDialog(
+                                                              context,
+                                                              0,
+                                                              4294967295,
+                                                              recipe.ingredients[index].volumeQuantity,
+                                                              Text(recipe.ingredients[index].volumeType
+                                                                  .getProperLabel()));
 
-                                                          if (returnedValue !=
-                                                              null) {
+                                                          if (returnedValue != null) {
                                                             setState(() {
-                                                              recipe
-                                                                      .ingredients[
-                                                                          index]
-                                                                      .volumeQuantity =
-                                                                  returnedValue;
+                                                              recipe.ingredients[index].volumeQuantity = returnedValue;
                                                             });
                                                           }
                                                         },
@@ -531,45 +403,28 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                                   children: [
                                                     Expanded(
                                                         child: ElevatedButton(
-                                                      style: ElevatedButton
-                                                          .styleFrom(
-                                                              minimumSize:
-                                                                  const Size
-                                                                          .fromHeight(
-                                                                      60)),
+                                                      style: ElevatedButton.styleFrom(
+                                                          minimumSize: const Size.fromHeight(60)),
                                                       onPressed: () async {
                                                         setState(() {
-                                                          recipe
-                                                                  .ingredients[
-                                                                      index]
-                                                                  .showEditView =
-                                                              false;
+                                                          recipe.ingredients[index].showEditView = false;
                                                         });
                                                       },
-                                                      child: const Text(
-                                                          "Minimize"),
+                                                      child: const Text("Minimize"),
                                                     )),
                                                     const SizedBox(width: 8.0),
                                                     Expanded(
                                                         child: ElevatedButton(
                                                       style: ElevatedButton.styleFrom(
-                                                          primary: const Color
-                                                                  .fromARGB(255,
-                                                              255, 107, 107),
-                                                          minimumSize: const Size
-                                                              .fromHeight(60)),
+                                                          primary: const Color.fromARGB(255, 255, 107, 107),
+                                                          minimumSize: const Size.fromHeight(60)),
                                                       onPressed: () async {
-                                                        recipe.ingredients
-                                                            .removeAt(index);
+                                                        recipe.ingredients.removeAt(index);
                                                         if (!newRecipe) {
-                                                          await currentState
-                                                              .modifyRecipe(
-                                                                  recipe,
-                                                                  false);
+                                                          await currentState.modifyRecipe(recipe, false);
                                                         }
                                                       },
-                                                      child:
-                                                          const Text("Delete"),
+                                                      child: const Text("Delete"),
                                                     ))
                                                   ],
                                                 ),
@@ -581,48 +436,34 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                       onDismissed: (_) async {
                                         recipe.ingredients.removeAt(index);
                                         if (!newRecipe) {
-                                          await currentState.modifyRecipe(
-                                              recipe, false);
+                                          await currentState.modifyRecipe(recipe, false);
                                         }
                                       },
                                       child: Container(
                                         padding: const EdgeInsets.all(8.0),
                                         decoration: BoxDecoration(
                                           border: Border.all(
-                                            color:
-                                                Theme.of(context).brightness ==
-                                                        Brightness.light
-                                                    ? Colors.black
-                                                    : Colors.white,
+                                            color: Theme.of(context).brightness == Brightness.light
+                                                ? Colors.black
+                                                : Colors.white,
                                             style: BorderStyle.solid,
                                             width: 1.0,
                                           ),
-                                          borderRadius: const BorderRadius.all(
-                                              Radius.circular(5.0)),
+                                          borderRadius: const BorderRadius.all(Radius.circular(5.0)),
                                           image: DecorationImage(
                                             colorFilter: ColorFilter.mode(
                                               Colors.black.withOpacity(0.35),
                                               BlendMode.multiply,
                                             ),
-                                            image: MemoryImage(recipe
-                                                    .ingredients[index]
-                                                    .storeIngredient
-                                                    ?.image ??
-                                                StoreIngredient.createNew()
-                                                    .image),
+                                            image: MemoryImage(recipe.ingredients[index].storeIngredient?.image ??
+                                                StoreIngredient.createNew().image),
                                             fit: BoxFit.cover,
                                           ),
                                         ),
-                                        width:
-                                            MediaQuery.of(context).size.width,
+                                        width: MediaQuery.of(context).size.width,
                                         height: 60,
                                         child: Center(
-                                            child: Text(
-                                                recipe
-                                                        .ingredients[index]
-                                                        .storeIngredient
-                                                        ?.name ??
-                                                    "",
+                                            child: Text(recipe.ingredients[index].storeIngredient?.name ?? "",
                                                 style: const TextStyle(
                                                   color: Colors.white,
                                                   fontWeight: FontWeight.bold,
@@ -639,8 +480,7 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                         children: [
                           Expanded(
                             child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                  minimumSize: const Size.fromHeight(60)),
+                              style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(60)),
                               onPressed: () async {
                                 if (currentState.ingredients.isNotEmpty) {
                                   setState(() {
@@ -651,16 +491,13 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                 } else {
                                   await showDialog<String>(
                                     context: context,
-                                    builder: (BuildContext context) =>
-                                        AlertDialog(
-                                      title:
-                                          const Text("Cannot add ingredient"),
+                                    builder: (BuildContext context) => AlertDialog(
+                                      title: const Text("Cannot add ingredient"),
                                       content: const Text(
                                           "Must create at least 1 store ingredient to add a recipe ingredient"),
                                       actions: <Widget>[
                                         TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context),
+                                          onPressed: () => Navigator.pop(context),
                                           child: const Text("OK"),
                                         ),
                                       ],
@@ -674,8 +511,7 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                           const SizedBox(width: 8.0),
                           Expanded(
                               child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                                minimumSize: const Size.fromHeight(60)),
+                            style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(60)),
                             onPressed: () {
                               var runAsync = () async {
                                 if (formKey.currentState!.validate()) {
@@ -683,8 +519,7 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                                     // Add to existing recipes
                                     await currentState.addRecipe(recipe);
                                   } else {
-                                    await currentState.modifyRecipe(
-                                        recipe, true);
+                                    await currentState.modifyRecipe(recipe, true);
                                   }
                                   return true;
                                 } else {

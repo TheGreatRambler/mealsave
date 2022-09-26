@@ -1,8 +1,7 @@
 import 'package:numberpicker/numberpicker.dart';
 import 'package:flutter/material.dart';
 
-Future openNumberDialog(BuildContext context, int minValue, int maxValue,
-    double initialValue, Widget title) async {
+Future openNumberDialog(BuildContext context, int minValue, int maxValue, double initialValue, Widget title) async {
   return showDialog<double>(
     context: context,
     builder: (BuildContext context) {
@@ -56,8 +55,7 @@ Future openNumberDialog(BuildContext context, int minValue, int maxValue,
   );
 }
 
-Future openIntDialog(BuildContext context, int minValue, int maxValue,
-    int initialValue, Widget title) async {
+Future openIntDialog(BuildContext context, int minValue, int maxValue, int initialValue, Widget title) async {
   return showDialog<int>(
     context: context,
     builder: (BuildContext context) {
