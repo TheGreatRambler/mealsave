@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mealsave/views/home.dart';
-import 'package:mealsave/views/state.dart';
+import 'package:mealsave/data/state.dart';
 import 'package:provider/provider.dart';
 
 void main() {

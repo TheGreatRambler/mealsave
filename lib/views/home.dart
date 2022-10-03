@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mealsave/views/widgets/recipe_card.dart';
 import 'package:mealsave/views/widgets/modify_recipe.dart';
 import 'package:mealsave/views/widgets/modify_ingredients.dart';
-import 'package:mealsave/views/state.dart';
+import 'package:mealsave/data/state.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:file_picker/file_picker.dart';

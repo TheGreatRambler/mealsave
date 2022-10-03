@@ -49,6 +49,8 @@ dependencies:
   webview_flutter: ^3.0.4
   file_picker: ^5.1.0
   network_tools: ^3.0.0+2
+  device_info_plus: ^4.1.2
+  package_info_plus: ^1.4.3+1
 
 dev_dependencies:
   flutter_test:

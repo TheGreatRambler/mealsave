@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:money2/money2.dart';
-import 'package:mealsave/views/state.dart';
+import 'package:mealsave/data/state.dart';
 import 'package:mealsave/views/widgets/modify_recipe.dart';
+import 'package:mealsave/data/types.dart';
 
 class RecipeCard extends StatelessWidget {
   Recipe recipe;

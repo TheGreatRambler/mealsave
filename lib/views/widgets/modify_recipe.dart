@@ -1,13 +1,14 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:mealsave/views/state.dart';
+import 'package:mealsave/data/state.dart';
 import 'package:provider/provider.dart';
 import 'package:mealsave/views/widgets/take_picture.dart';
 import 'package:image/image.dart' as img;
 import 'package:flutter/services.dart';
 import 'package:mealsave/views/widgets/number_dialog.dart';
 import 'package:mealsave/views/widgets/open_browser.dart';
+import 'package:mealsave/data/types.dart';
 
 class ModifyRecipeMenu extends StatefulWidget {
   Recipe? recipe;
@@ -179,6 +180,7 @@ class _ModifyRecipeMenuState extends State<ModifyRecipeMenu> {
                               if (picture != null) {
                                 setState(() {
                                   recipe.image = Uint8List.fromList(img.encodePng(picture));
+                                  currentState.server.attemptUploadRecipeImage(recipe);
                                 });
                               }
                             },

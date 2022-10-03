@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mealsave/views/state.dart';
+import 'package:mealsave/data/state.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class BrowserView extends StatelessWidget {

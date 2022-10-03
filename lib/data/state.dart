@@ -15,24 +15,24 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:network_tools/network_tools.dart';
+import 'package:mealsave/data/network.dart';
+import 'package:mealsave/data/types.dart';
 
 class CurrentState extends ChangeNotifier {
   final RecipeDatabase recipeDatabase = RecipeDatabase();
+  final Server server = Server();
+
   List<Recipe> recipes = [];
   List<StoreIngredient> ingredients = [];
-  String? serverIp;
   bool hasLoaded = false;
 
   Future<void> loadDatabase() async {
     if (!hasLoaded) {
+      await server.startup(recipeDatabase);
       await recipeDatabase.open("recipes.db");
       ingredients = await recipeDatabase.getAllIngredients();
       recipes = await recipeDatabase.getAllRecipes(ingredients);
-
-      if (kReleaseMode) {
-        serverIp = "mealsave.io";
-      }
-
+      server.handleUnsynced(ingredients, recipes);
       hasLoaded = true;
       notifyListeners();
     }
@@ -55,6 +55,7 @@ class CurrentState extends ChangeNotifier {
     if (!isNew) {
       await recipeDatabase.deleteRecipe(recipe);
     }
+    server.attemptDeleteRecipe(recipe);
     recipes.remove(recipe);
     notifyListeners();
   }
@@ -70,6 +71,7 @@ class CurrentState extends ChangeNotifier {
 
   Future<void> removeIngredient(StoreIngredient ingredient) async {
     await recipeDatabase.deleteIngredient(ingredient);
+    server.attemptDeleteIngredient(ingredient);
     ingredients.remove(ingredient);
     notifyListeners();
   }
@@ -79,52 +81,18 @@ class CurrentState extends ChangeNotifier {
       // Modify database, don't do this by default because it's costly
       await recipeDatabase.updateRecipe(recipe);
     }
+    server.attemptCreateUpdateRecipe(recipe);
     notifyListeners();
   }
 
   Future<void> modifyIngredient(StoreIngredient ingredient) async {
     await recipeDatabase.updateIngredient(ingredient);
+    server.attemptCreateUpdateIngredient(ingredient);
     notifyListeners();
   }
 
-  Future<void> ensureServerAvailable() async {
-    if (!kReleaseMode && serverIp == null) {
-      // Scan for local IP of dev server on my LAN
-      await HostScanner.scanDevicesForSinglePort("10.0.0", 3000, progressCallback: (progress) {
-        null;
-      }).listen((host) {
-        serverIp = "${host.address}:3000";
-      }).asFuture();
-    }
-    return;
-  }
-
-  Future<void> attemptUploadIngredientImage(StoreIngredient ingredient) async {
-    if (ingredient.id != null) {
-      await ensureServerAvailable();
-
-      var res = await http.post(
-        Uri.parse("http://$serverIp/updates/image"),
-        // "User" is TODO
-        headers: <String, String>{
-          "Content-Type": "image/png",
-          "Image-Type": "ingredient",
-          "User": 0.toString(),
-          "Id": ingredient.id.toString()
-        },
-        body: ingredient.image,
-      );
-
-      if (res.statusCode != 202) {
-        // TODO
-      }
-    } else {
-      // TODO
-    }
-  }
-
   Future<String?> backupRecipe(Recipe recipe) async {
-    return await recipeDatabase.getRecipeBackup(recipe);
+    return await recipeDatabase.getRecipeBackup([recipe]);
   }
 
   Future<bool> loadBackupRecipe(File path) async {
@@ -134,6 +102,7 @@ class CurrentState extends ChangeNotifier {
     ingredients += readRecipes.returnedIngredients;
     recipes += readRecipes.returnedRecipes;
 
+    server.handleUnsynced(ingredients, recipes);
     notifyListeners();
     return true;
   }
@@ -213,7 +182,7 @@ class CurrentState extends ChangeNotifier {
       contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 18.0),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(5.0),
-        borderSide: BorderSide(color: Colors.black, width: 1.0),
+        borderSide: const BorderSide(color: Colors.black, width: 1.0),
       ),
     );
   }
@@ -244,408 +213,8 @@ class PluginAccess {
   }
 }
 
-class Recipe {
-  int? id = null;
-  String name = "";
-  String url = "";
-  double expectedServings = 0.0;
-  List<Ingredient> ingredients = [];
-  Uint8List image = getDefaultImage();
-
-  int getPricePerServing() {
-    // The meat of the entire app
-    // Yeah there's a lot of boilerplate to get to this point
-    double total = 0.0;
-    for (var ingredient in ingredients) {
-      total += ingredient.getPrice();
-    }
-    // Cast down to nearest cent
-    return (total / expectedServings).round();
-  }
-
-  Map<String, Object?> toMap() {
-    var entry = <String, Object?>{
-      "name": name,
-      "expected_servings": expectedServings,
-      "url": url,
-      "thumbnail": image,
-    };
-
-    if (id != null) {
-      entry["_id"] = id;
-    }
-
-    return entry;
-  }
-
-  static Recipe fromMap(
-    Map<String, Object?> map,
-    List<Ingredient> ingredients,
-  ) {
-    return Recipe(
-      id: (map["_id"] ?? 0) as int,
-      name: (map["name"] ?? "") as String,
-      expectedServings: (map["expected_servings"] ?? 0.0) as double,
-      url: (map["url"] ?? "") as String,
-      image: (map["thumbnail"] ?? getDefaultImage()) as Uint8List,
-      ingredients: ingredients,
-    );
-  }
-
-  Recipe.createNew() {
-    // Used when adding a new recipe
-    Recipe(
-      id: null,
-      name: "",
-      expectedServings: 0,
-      url: "",
-      image: getDefaultImage(),
-      ingredients: <Ingredient>[],
-    );
-  }
-
-  Recipe({
-    this.id,
-    required this.name,
-    required this.expectedServings,
-    required this.url,
-    required this.image,
-    required this.ingredients,
-  });
-}
-
-enum VolumeType {
-  liter,
-  teaspoon,
-  tablespoon,
-  ounce,
-  cup,
-  pint,
-  quart,
-  gallon,
-  pound, // Mass measurement
-  gram, // Mass measurement
-  scalar, // Integer amount of an item, cannot be converted to or from other types
-  percentage, // Percentage of a store ingredient, works for all types
-}
-
-extension VolumeTypeConversion on VolumeType {
-  String toPrettyString() {
-    switch (this) {
-      case VolumeType.liter:
-        return "Liters";
-      case VolumeType.teaspoon:
-        return "Teaspoons";
-      case VolumeType.tablespoon:
-        return "Tablespoons";
-      case VolumeType.ounce:
-        return "Ounces";
-      case VolumeType.cup:
-        return "Cups";
-      case VolumeType.pint:
-        return "Pints";
-      case VolumeType.quart:
-        return "Quarts";
-      case VolumeType.gallon:
-        return "Gallons";
-      case VolumeType.pound:
-        return "Pounds";
-      case VolumeType.gram:
-        return "Grams";
-      case VolumeType.scalar:
-        return "Number";
-      case VolumeType.percentage:
-        return "Percentage";
-    }
-  }
-
-  static VolumeType fromPrettyString(String name) {
-    switch (name) {
-      case "Liters":
-        return VolumeType.liter;
-      case "Teaspoons":
-        return VolumeType.teaspoon;
-      case "Tablespoons":
-        return VolumeType.tablespoon;
-      case "Ounces":
-        return VolumeType.ounce;
-      case "Cups":
-        return VolumeType.cup;
-      case "Pints":
-        return VolumeType.pint;
-      case "Quarts":
-        return VolumeType.quart;
-      case "Gallons":
-        return VolumeType.gallon;
-      case "Pounds":
-        return VolumeType.pound;
-      case "Grams":
-        return VolumeType.gram;
-      case "Number":
-        return VolumeType.scalar;
-      case "Percentage":
-        return VolumeType.percentage;
-      default:
-        return VolumeType.quart;
-    }
-  }
-
-  Volume fromQuantity(double quantity) {
-    switch (this) {
-      case VolumeType.liter:
-        return liters(quantity);
-      case VolumeType.teaspoon:
-        return teaspoons(quantity);
-      case VolumeType.tablespoon:
-        return tablespoons(quantity);
-      case VolumeType.ounce:
-        return fluidOunces(quantity);
-      case VolumeType.cup:
-        return cups(quantity);
-      case VolumeType.pint:
-        return pints(quantity);
-      case VolumeType.quart:
-        return quarts(quantity);
-      case VolumeType.gallon:
-        return gallons(quantity);
-      case VolumeType.pound:
-        // Mass to volume measurement, using back of the envelope conversion close to flour
-        // TODO detect density from name of store item
-        // https://www.inchcalculator.com/convert/pound-to-fluid-ounce/
-        return fluidOunces(quantity * 20.0);
-      case VolumeType.gram:
-        // Mass to volume measurement, using back of the envelope conversion
-        // TODO detect density from name of store item
-        // https://www.inchcalculator.com/convert/gram-to-teaspoon/
-        return teaspoons(quantity * 0.20288);
-      case VolumeType.scalar:
-        // Doesn't matter as long as we're consistent
-        return quarts(quantity);
-      case VolumeType.percentage:
-        null;
-    }
-
-    return quarts(quantity);
-  }
-
-  double toQuantity(Volume volume) {
-    switch (this) {
-      case VolumeType.liter:
-        return volume.asVolume(liters);
-      case VolumeType.teaspoon:
-        return volume.asVolume(teaspoons);
-      case VolumeType.tablespoon:
-        return volume.asVolume(tablespoons);
-      case VolumeType.ounce:
-        return volume.asVolume(fluidOunces);
-      case VolumeType.cup:
-        return volume.asVolume(cups);
-      case VolumeType.pint:
-        return volume.asVolume(pints);
-      case VolumeType.quart:
-        return volume.asVolume(quarts);
-      case VolumeType.gallon:
-        return volume.asVolume(gallons);
-      case VolumeType.pound:
-        return volume.asVolume(fluidOunces) / 20.0;
-      case VolumeType.gram:
-        return volume.asVolume(teaspoons) / 0.20288;
-      case VolumeType.scalar:
-        return volume.asVolume(quarts);
-      case VolumeType.percentage:
-        null;
-    }
-
-    return 0.0;
-  }
-
-  double convertQuantity(double old, VolumeType newType) {
-    if (this == VolumeType.scalar ||
-        newType == VolumeType.scalar ||
-        this == VolumeType.percentage ||
-        newType == VolumeType.percentage) {
-      return 0.0;
-    } else {
-      return newType.toQuantity(fromQuantity(old));
-    }
-  }
-
-  String getProperLabel() {
-    switch (this) {
-      case VolumeType.scalar:
-        return "Number";
-      case VolumeType.percentage:
-        return "Percentage";
-      default:
-        return "Quantity";
-    }
-  }
-}
-
-class Ingredient {
-  int? id = null;
-  VolumeType volumeType = VolumeType.quart;
-  double volumeQuantity = 0;
-  // To provide consistent price information
-  StoreIngredient? storeIngredient;
-  // Whether to open edit view in list
-  bool showEditView = false;
-
-  Map<String, Object?> toMap() {
-    var entry = <String, Object?>{
-      "volume_type": volumeType.toPrettyString(),
-      "volume_quantity": volumeQuantity,
-      "store_ingredient": storeIngredient?.id ?? 0,
-    };
-
-    if (id != null) {
-      entry["_id"] = id;
-    }
-
-    return entry;
-  }
-
-  static Ingredient fromMap(Map<String, Object?> map, StoreIngredient storeIngredientIn) {
-    return Ingredient(
-      id: (map["_id"] ?? 0) as int,
-      volumeType: VolumeTypeConversion.fromPrettyString((map["volume_type"] ?? "Ounces") as String),
-      volumeQuantity: (map["volume_quantity"] ?? 0.0) as double,
-      storeIngredient: storeIngredientIn,
-    );
-  }
-
-  Ingredient.createNew() {
-    Ingredient(
-      id: null,
-      volumeType: VolumeType.ounce,
-      volumeQuantity: 0.0,
-      storeIngredient: StoreIngredient.createNew(),
-    );
-  }
-
-  Ingredient({
-    this.id,
-    required this.volumeType,
-    required this.volumeQuantity,
-    required this.storeIngredient,
-  });
-
-  void changeType(VolumeType newType) {
-    volumeQuantity = volumeType.convertQuantity(volumeQuantity, newType);
-    volumeType = newType;
-  }
-
-  double getPrice() {
-    if (storeIngredient != null) {
-      if (storeIngredient!.volumeType == VolumeType.scalar) {
-        // Unitless value
-        return volumeQuantity / storeIngredient!.volumeQuantity * storeIngredient!.price;
-      } else if (volumeType == VolumeType.percentage) {
-        // Simply returns a percentage of the store ingredient price
-        return volumeQuantity / 100 * storeIngredient!.price;
-      } else {
-        var thisVolume = volumeType.fromQuantity(volumeQuantity);
-        var storeVolume = storeIngredient!.volumeType.fromQuantity(storeIngredient!.volumeQuantity);
-        // Need consistent unit to divide, can't divide units by each other
-        // Limitation of fling_units
-        var ingredientRatio = thisVolume.asVolume(teaspoons) / storeVolume.asVolume(teaspoons);
-        return ingredientRatio * storeIngredient!.price;
-      }
-    } else {
-      return 0.0;
-    }
-  }
-
-  bool isScalar() {
-    // Scalar quantities are handled differently, needs a check
-    return storeIngredient != null && storeIngredient!.volumeType == VolumeType.scalar;
-  }
-}
-
-class StoreIngredient {
-  int? id = null;
-  String name = "";
-  VolumeType volumeType = VolumeType.quart;
-  double volumeQuantity = 0;
-  int price = 0;
-  Uint8List image = getDefaultImage();
-  // Whether to open edit view in list
-  bool showEditView = false;
-
-  void changeType(VolumeType newType) {
-    if (volumeType == VolumeType.scalar || newType == VolumeType.scalar) {
-      volumeQuantity = 1.0;
-      volumeType = newType;
-    } else {
-      volumeQuantity = volumeType.convertQuantity(volumeQuantity, newType);
-      volumeType = newType;
-    }
-  }
-
-  Map<String, Object?> toMap() {
-    var entry = <String, Object?>{
-      "name": name,
-      "volume_type": volumeType.toPrettyString(),
-      "volume_quantity": volumeQuantity,
-      "price": price,
-      "thumbnail": image,
-    };
-
-    if (id != null) {
-      entry["_id"] = id;
-    }
-
-    return entry;
-  }
-
-  static StoreIngredient fromMap(Map<String, Object?> map) {
-    return StoreIngredient(
-      id: (map["_id"] ?? 0) as int,
-      name: (map["name"] ?? "") as String,
-      volumeType: VolumeTypeConversion.fromPrettyString((map["volume_type"] ?? "Ounces") as String),
-      volumeQuantity: (map["volume_quantity"] ?? 0.0) as double,
-      price: (map["price"] ?? "") as int,
-      image: (map["thumbnail"] ?? getDefaultImage()) as Uint8List,
-    );
-  }
-
-  StoreIngredient.createNew() {
-    StoreIngredient(
-      id: null,
-      name: "",
-      volumeType: VolumeType.ounce,
-      volumeQuantity: 0.0,
-      price: 0,
-      image: getDefaultImage(),
-    );
-  }
-
-  StoreIngredient({
-    this.id,
-    required this.name,
-    required this.volumeType,
-    required this.volumeQuantity,
-    required this.price,
-    required this.image,
-  });
-}
-
-Uint8List getDefaultImage() {
-  var image = img.Image(100, 100);
-  image.fill(img.getColor(255, 255, 255));
-  return Uint8List.fromList(img.encodePng(image));
-}
-
-// The result of reading a backup
-class BackupRecipe {
-  List<StoreIngredient> returnedIngredients;
-  List<Recipe> returnedRecipes;
-
-  BackupRecipe({required this.returnedIngredients, required this.returnedRecipes});
-}
-
 class RecipeDatabase {
-  Database? db = null;
+  Database? db;
 
   Future open(String path) async {
     //File(join(await getDatabasesPath(), path)).delete();
@@ -657,7 +226,8 @@ CREATE TABLE IF NOT EXISTS recipes (
     name text not null,
     expected_servings real not null,
     url integer not null,
-    thumbnail blob not null)
+    thumbnail blob not null,
+    last_synced integer)
 ''');
 
       await db.execute('''
@@ -676,7 +246,8 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
     volume_type text not null,
     volume_quantity real not null,
     price integer not null,
-    thumbnail blob not null)
+    thumbnail blob not null,
+    last_synced integer)
 ''');
     }, onOpen: (Database db) async {});
   }
@@ -694,6 +265,7 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
       "volume_quantity",
       "price",
       "thumbnail",
+      "last_synced",
     ]);
 
     return ingredients == null ? [] : ingredients.map((map) => StoreIngredient.fromMap(map)).toList();
@@ -705,7 +277,8 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
   }
 
   Future<void> updateIngredient(StoreIngredient ingredient) async {
-    await db?.update("store_ingredients", ingredient.toMap(), where: "_id = ?", whereArgs: [ingredient.id]);
+    var ingredientMap = ingredient.toMap();
+    await db?.update("store_ingredients", ingredientMap, where: "_id = ?", whereArgs: [ingredient.id]);
   }
 
   Future<Recipe> insertRecipe(Recipe recipe) async {
@@ -720,7 +293,7 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
     return recipe;
   }
 
-  Future<String?> getRecipeBackup(Recipe recipe) async {
+  Future<String?> getRecipeBackup(List<Recipe> recipes) async {
     var canAccessExternalStorage = await Permission.storage.request().isGranted;
     if (!canAccessExternalStorage) {
       // Uh oh
@@ -730,7 +303,8 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
     // Create new database for this backup
     // Note: Certain charactors in the recipe name WILL NOT SAVE! (question marks are one)
     final DateFormat dateFormatter = DateFormat("yyyy-MM-dd-H-m-s");
-    String databaseName = "mealsave-${recipe.name}-${dateFormatter.format(DateTime.now())}.db";
+    String databaseName =
+        "mealsave-${recipes.length == 1 ? recipes[0].name : "recipes"}-${dateFormatter.format(DateTime.now())}.mealsave";
 
     // Start with the main downloads (Android)
     var basePath = Directory("/storage/emulated/0/Download");
@@ -743,7 +317,7 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
 
     var backupDb = await openDatabase(databasePath, version: 1, onConfigure: (Database backupDb) async {
       // Disable db-journal
-      // It's an extra file that user's couldn't use
+      // It's an extra file that users couldn't use
       await backupDb.rawQuery("PRAGMA journal_mode=MEMORY;");
     }, onCreate: (Database backupDb, int version) async {
       await backupDb.execute('''
@@ -775,7 +349,13 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
 ''');
     }, onOpen: (Database backupDb) async {
       // Insert into backup
-      await backupDb.insert("recipes", recipe.toMap());
+      var batch = backupDb.batch();
+      for (var recipe in recipes) {
+        var recipeMap = recipe.toMap();
+        recipeMap.remove("last_synced");
+        batch.insert("recipes", recipeMap);
+      }
+      await batch.commit(noResult: true);
 
       List<Map<String, Object?>> recipeIngredients = await db?.query("recipe_ingredients",
               columns: [
@@ -785,8 +365,7 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
                 "volume_quantity",
                 "store_ingredient",
               ],
-              where: "recipe = ?",
-              whereArgs: [recipe.id]) ??
+              where: "recipe IN (${recipes.map((recipe) => recipe.id).join(',')})") ??
           [];
 
       for (var recipeIngredient in recipeIngredients) {
@@ -914,6 +493,7 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
       "expected_servings",
       "url",
       "thumbnail",
+      "last_synced",
     ]);
 
     Map<int, StoreIngredient> ingredientsFromID = <int, StoreIngredient>{};
@@ -963,7 +543,8 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
   }
 
   Future<void> updateRecipe(Recipe recipe) async {
-    await db?.update("recipes", recipe.toMap(), where: "_id = ?", whereArgs: [recipe.id]);
+    var recipeMap = recipe.toMap();
+    await db?.update("recipes", recipeMap, where: "_id = ?", whereArgs: [recipe.id]);
 
     // Intelligently handle all recipe ingredients
     List<int> includedIngredients = <int>[];
@@ -982,7 +563,76 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
 
     // Remove unused recipe ingredients
     await db?.delete("recipe_ingredients",
-        where: "_id NOT IN (${includedIngredients.join(', ')}) AND recipe = ?", whereArgs: [recipe.id]);
+        where: "_id NOT IN (${includedIngredients.join(',')}) AND recipe = ?", whereArgs: [recipe.id]);
+  }
+
+/*
+  Future<List<StoreIngredient>> getUnsyncedIngredients() async {
+    List<Map<String, Object?>>? ingredients = await db?.query("store_ingredients",
+        columns: [
+          "_id",
+          "name",
+          "volume_type",
+          "volume_quantity",
+          "price",
+          "thumbnail",
+        ],
+        where: "last_synced IS NULL");
+
+    return ingredients == null ? [] : ingredients.map((map) => StoreIngredient.fromMap(map)).toList();
+  }
+
+  Future<List<Recipe>> getUnsyncedRecipes() async {
+    List<Map<String, Object?>>? recipes = await db?.query("recipes",
+        columns: [
+          "_id",
+          "name",
+          "expected_servings",
+          "url",
+          "thumbnail",
+        ],
+        where: "last_synced IS NULL");
+
+    if (recipes == null) {
+      return [];
+    }
+
+    List<Recipe> returnedRecipes = [];
+    for (var recipe in recipes) {
+      List<Map<String, Object?>>? recipeIngredients = await db?.query("recipe_ingredients",
+          columns: [
+            "_id",
+            "recipe",
+            "volume_type",
+            "volume_quantity",
+            "store_ingredient",
+          ],
+          where: "recipe = ?",
+          whereArgs: [recipe["_id"] as int]);
+
+      if (recipeIngredients != null) {
+        var ingredients = recipeIngredients.map((map) {
+          var placeholder = StoreIngredient.createNew();
+          // Placeholder for ID only
+          placeholder.id = map["_id"] as int;
+          return Ingredient.fromMap(map, placeholder);
+        }).toList();
+        returnedRecipes.add(Recipe.fromMap(recipe, ingredients));
+      } else {
+        returnedRecipes.add(Recipe.fromMap(recipe, []));
+      }
+    }
+    return returnedRecipes;
+  }
+  */
+
+  Future<void> syncIngredient(StoreIngredient ingredient) async {
+    await db?.update("store_ingredients", {"last_synced": ingredient.lastSynced},
+        where: "_id = ?", whereArgs: [ingredient.id]);
+  }
+
+  Future<void> syncRecipe(Recipe recipe) async {
+    await db?.update("recipes", {"last_synced": recipe.lastSynced}, where: "_id = ?", whereArgs: [recipe.id]);
   }
 
   Future close() async => db?.close();

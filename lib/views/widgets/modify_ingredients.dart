@@ -3,7 +3,8 @@ import 'dart:typed_data';
 import 'package:fling_units/fling_units.dart';
 import 'package:flutter/material.dart';
 import 'package:money2/money2.dart';
-import 'package:mealsave/views/state.dart';
+import 'package:mealsave/data/state.dart';
+import 'package:mealsave/data/types.dart';
 import 'package:provider/provider.dart';
 import 'package:mealsave/views/widgets/take_picture.dart';
 import 'package:image/image.dart' as img;
@@ -246,7 +247,7 @@ class _ModifyIngredientsMenuState extends State<ModifyIngredientsMenu> {
                                                         setState(() {
                                                           var pic = Uint8List.fromList(img.encodePng(picture));
                                                           currentState.ingredient(index).image = pic;
-                                                          currentState.attemptUploadIngredientImage(
+                                                          currentState.server.attemptUploadIngredientImage(
                                                               currentState.ingredient(index));
                                                           currentState.modifyIngredient(currentState.ingredient(index));
                                                         });
