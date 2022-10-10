@@ -15,9 +15,8 @@ class Server {
   String? serverIp;
   RecipeDatabase? database;
 
-  // This user's ID according to the server
-  // Uninitialized is -1 so no access
-  // Used to give us access to items
+  // This user's ID
+  // All users by default upload recipes, requesting recipes is part of the paid app
   String user = "default";
   String? manufacturer;
   String? model;
@@ -110,6 +109,7 @@ class Server {
 
   Map<int, Timer> ingredientTimers = {};
   Future<void> attemptCreateUpdateIngredient(StoreIngredient ingredient) async {
+    print("Attempt modify ingredient");
     if (serverIp != null && ingredient.id != null) {
       // Batch calls by 1 second
       if (ingredientTimers.containsKey(ingredient.id)) {
@@ -166,7 +166,7 @@ class Server {
       }
 
       recipeTimers[recipe.id!] = Timer(const Duration(seconds: 2), () async {
-        // If this is some time has passed with no modifications
+        // If this is called some time has passed with no modifications
         await recipeRequest(recipe);
         recipeTimers.remove(recipe.id);
       });
@@ -219,7 +219,7 @@ class Server {
                 "Id": ingredient.id.toString(),
                 "Delete": "1"
               },
-              body: "")
+              body: "{}")
           .timeout(const Duration(seconds: 5), onTimeout: () async {
         return http.Response("", 408);
       });
@@ -240,7 +240,7 @@ class Server {
                 "Id": recipe.id.toString(),
                 "Delete": "1"
               },
-              body: "")
+              body: "{}")
           .timeout(const Duration(seconds: 5), onTimeout: () async {
         return http.Response("", 408);
       });

@@ -301,7 +301,7 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
     }
 
     // Create new database for this backup
-    // Note: Certain charactors in the recipe name WILL NOT SAVE! (question marks are one)
+    // TODO: Certain charactors in the recipe name WILL NOT SAVE! (question marks are one)
     final DateFormat dateFormatter = DateFormat("yyyy-MM-dd-H-m-s");
     String databaseName =
         "mealsave-${recipes.length == 1 ? recipes[0].name : "recipes"}-${dateFormatter.format(DateTime.now())}.mealsave";
