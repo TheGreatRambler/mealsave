@@ -8,6 +8,7 @@ import 'package:mealsave/data/state.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -76,14 +77,20 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           : Consumer<CurrentState>(
               builder: (context, currentState, child) {
                 return currentState.numRecipes() > 0
-                    ? ListView.builder(
-                        itemCount: currentState.numRecipes(),
-                        itemBuilder: (context, index) {
-                          return RecipeCard(
-                            recipe: currentState.recipe(index),
-                          );
-                        },
-                      )
+                    ? Column(children: <Widget>[
+                        Expanded(
+                            child: ListView.builder(
+                          scrollDirection: Axis.vertical,
+                          shrinkWrap: true,
+                          itemCount: currentState.numRecipes(),
+                          itemBuilder: (context, index) {
+                            return RecipeCard(
+                              recipe: currentState.recipe(index),
+                            );
+                          },
+                        )),
+                        const SizedBox(height: 80)
+                      ])
                     : Center(
                         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                         const Text(
@@ -149,36 +156,79 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   tooltip: "Add recipe",
                   child: const Icon(Icons.add),
                 ),
-                FloatingActionButton(
+                SpeedDial(
+                  icon: Icons.settings,
+                  tooltip: "Settings",
                   heroTag: null,
-                  onPressed: () async {
-                    FilePickerResult? result = await FilePicker.platform.pickFiles();
-                    if (result != null && result.files.single.path != null) {
-                      var file = File(result.files.single.path!);
-                      if (await currentState.loadBackupRecipe(file)) {
-                        // Success, return early so the error dialog doesn't appear
-                        return;
-                      }
-                    }
+                  spaceBetweenChildren: 20,
+                  children: [
+                    SpeedDialChild(
+                      onTap: () async {
+                        FilePickerResult? result = await FilePicker.platform.pickFiles();
+                        if (result != null && result.files.single.path != null) {
+                          var file = File(result.files.single.path!);
+                          if (await currentState.loadBackupRecipe(file)) {
+                            // Success, return early so the error dialog doesn't appear
+                            return;
+                          }
+                        }
 
-                    // If this was reached, there is an error
-                    await showDialog<String>(
-                      context: context,
-                      builder: (BuildContext context) => AlertDialog(
-                        title: const Text("Recipe not loaded"),
-                        content: const Text("Loading recipe from backup did not succeed"),
-                        actions: <Widget>[
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text("OK"),
+                        // If this was reached, there is an error
+                        await showDialog<String>(
+                          context: context,
+                          builder: (BuildContext context) => AlertDialog(
+                            title: const Text("Recipe not loaded"),
+                            content: const Text("Loading recipe from backup did not succeed"),
+                            actions: <Widget>[
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text("OK"),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    );
-                  },
-                  tooltip: "Load recipe from backup",
-                  child: const Icon(Icons.file_open),
-                ),
+                        );
+                      },
+                      label: "Load recipes from backup",
+                      child: const Icon(Icons.file_open),
+                    ),
+                    SpeedDialChild(
+                      onTap: () async {
+                        var name = await currentState.backupAllRecipes();
+                        if (name != null) {
+                          await showDialog<String>(
+                            context: context,
+                            builder: (BuildContext context) => AlertDialog(
+                              title: const Text("Recipes saved"),
+                              content: Text("Saved to $name"),
+                              actions: <Widget>[
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text("OK"),
+                                ),
+                              ],
+                            ),
+                          );
+                        } else {
+                          await showDialog<String>(
+                            context: context,
+                            builder: (BuildContext context) => AlertDialog(
+                              title: const Text("Error"),
+                              content: const Text("Recipes not saved"),
+                              actions: <Widget>[
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text("OK"),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                      },
+                      label: "Backup all recipes",
+                      child: const Icon(Icons.download),
+                    ),
+                  ],
+                )
               ],
             ),
           );

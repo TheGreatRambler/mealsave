@@ -97,7 +97,9 @@ class RecipeCard extends StatelessWidget {
                           size: 18,
                         ),
                         const SizedBox(width: 7),
-                        Text(recipe.url.split("/").where((element) => element.isNotEmpty).last),
+                        recipe.url.isNotEmpty
+                            ? Text(recipe.url.split("/").where((element) => element.isNotEmpty).last)
+                            : const SizedBox.shrink(),
                       ],
                     ),
                   )

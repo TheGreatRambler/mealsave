@@ -95,6 +95,10 @@ class CurrentState extends ChangeNotifier {
     return await recipeDatabase.getRecipeBackup([recipe]);
   }
 
+  Future<String?> backupAllRecipes() async {
+    return await recipeDatabase.getRecipeBackup(recipes, "recipes");
+  }
+
   Future<bool> loadBackupRecipe(File path) async {
     var readRecipes = await recipeDatabase.loadBackupRecipe(path);
 
@@ -293,7 +297,7 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
     return recipe;
   }
 
-  Future<String?> getRecipeBackup(List<Recipe> recipes) async {
+  Future<String?> getRecipeBackup(List<Recipe> recipes, [String? name]) async {
     var canAccessExternalStorage = await Permission.storage.request().isGranted;
     if (!canAccessExternalStorage) {
       // Uh oh
@@ -303,8 +307,7 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
     // Create new database for this backup
     // TODO: Certain charactors in the recipe name WILL NOT SAVE! (question marks are one)
     final DateFormat dateFormatter = DateFormat("yyyy-MM-dd-H-m-s");
-    String databaseName =
-        "mealsave-${recipes.length == 1 ? recipes[0].name : "recipes"}-${dateFormatter.format(DateTime.now())}.mealsave";
+    String databaseName = "mealsave-${name ?? recipes[0].name}-${dateFormatter.format(DateTime.now())}.mealsave";
 
     // Start with the main downloads (Android)
     var basePath = Directory("/storage/emulated/0/Download");
@@ -368,23 +371,29 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
               where: "recipe IN (${recipes.map((recipe) => recipe.id).join(',')})") ??
           [];
 
+      var allIncludedStoreIngredients = <int>{};
       for (var recipeIngredient in recipeIngredients) {
         await backupDb.insert("recipe_ingredients", recipeIngredient);
-        List<Map<String, Object?>> storeIngredients = await db?.query("store_ingredients",
-                columns: [
-                  "_id",
-                  "name",
-                  "volume_type",
-                  "volume_quantity",
-                  "price",
-                  "thumbnail",
-                ],
-                where: "_id = ?",
-                whereArgs: [recipeIngredient["store_ingredient"] as int]) ??
-            [];
 
-        for (var storeIngredient in storeIngredients) {
-          await backupDb.insert("store_ingredients", storeIngredient);
+        var id = recipeIngredient["store_ingredient"] as int;
+        if (!allIncludedStoreIngredients.contains(id)) {
+          List<Map<String, Object?>> storeIngredients = await db?.query("store_ingredients",
+                  columns: [
+                    "_id",
+                    "name",
+                    "volume_type",
+                    "volume_quantity",
+                    "price",
+                    "thumbnail",
+                  ],
+                  where: "_id = ?",
+                  whereArgs: [id]) ??
+              [];
+
+          if (storeIngredients.isNotEmpty) {
+            await backupDb.insert("store_ingredients", storeIngredients[0]);
+            allIncludedStoreIngredients.add(id);
+          }
         }
       }
     });
