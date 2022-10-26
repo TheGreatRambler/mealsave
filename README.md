@@ -1,5 +1,5 @@
 # MealSave
-# [mealsave.io](https://mealsave.io)
+# [MealSave.io](https://mealsave.io)
 # [![Logo](./images/logo.png)](https://mealsave.io)
 
 Calculate the exact cost of a portion of a meal so you can find what's cheapest. Designed for college students by a college student :)

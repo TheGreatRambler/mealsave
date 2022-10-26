@@ -24,7 +24,7 @@ class Server {
 
   Server() {
     if (kReleaseMode) {
-      serverIp = "mealsave.io";
+      serverIp = "https://mealsave.io";
     }
   }
 
@@ -35,7 +35,7 @@ class Server {
       await HostScanner.scanDevicesForSinglePort("10.0.0", 3000, progressCallback: (progress) {
         null;
       }).listen((host) {
-        serverIp = "${host.address}:3000";
+        serverIp = "http://${host.address}:3000";
       }).asFuture();
     }
     user = await getDeviceSpecificID();
@@ -85,18 +85,20 @@ class Server {
 
   Future<void> attemptRegisterDevice() async {
     if (serverIp != null) {
+      var body = jsonEncode(<String, Object>{
+        "user": user,
+        "manufacturer": manufacturer ?? "",
+        "model": model ?? "",
+        "device_version": deviceVersion ?? "",
+        "version": (await PackageInfo.fromPlatform()).version
+      });
       var res = await http
-          .post(Uri.parse("http://$serverIp/updates/user"),
+          .post(Uri.parse("$serverIp/updates/user"),
               headers: <String, String>{
                 "Content-Type": "application/json",
+                "Content-Length": body.codeUnits.length.toString()
               },
-              body: jsonEncode(<String, Object>{
-                "user": user,
-                "manufacturer": manufacturer ?? "",
-                "model": model ?? "",
-                "device_version": deviceVersion ?? "",
-                "version": (await PackageInfo.fromPlatform()).version
-              }))
+              body: body)
           .timeout(const Duration(seconds: 5), onTimeout: () async {
         return http.Response("", 408);
       });
@@ -109,7 +111,6 @@ class Server {
 
   Map<int, Timer> ingredientTimers = {};
   Future<void> attemptCreateUpdateIngredient(StoreIngredient ingredient) async {
-    print("Attempt modify ingredient");
     if (serverIp != null && ingredient.id != null) {
       // Batch calls by 1 second
       if (ingredientTimers.containsKey(ingredient.id)) {
@@ -129,19 +130,21 @@ class Server {
 
   Future<void> ingredientRequest(StoreIngredient ingredient) async {
     if (serverIp != null) {
+      var body = jsonEncode(<String, Object>{
+        "name": ingredient.name,
+        "volume_type": ingredient.volumeType.toPrettyString(),
+        "volume_quantity": ingredient.volumeQuantity,
+        "price": ingredient.price,
+      });
       var res = await http
-          .post(Uri.parse("http://$serverIp/updates/ingredient"),
+          .post(Uri.parse("$serverIp/updates/ingredient"),
               headers: <String, String>{
                 "Content-Type": "application/json",
+                "Content-Length": body.codeUnits.length.toString(),
                 "User": user,
                 "Id": ingredient.id.toString(),
               },
-              body: jsonEncode(<String, Object>{
-                "name": ingredient.name,
-                "volume_type": ingredient.volumeType.toPrettyString(),
-                "volume_quantity": ingredient.volumeQuantity,
-                "price": ingredient.price,
-              }))
+              body: body)
           .timeout(const Duration(seconds: 5), onTimeout: () async {
         return http.Response("", 408);
       });
@@ -178,22 +181,28 @@ class Server {
 
   Future<void> recipeRequest(Recipe recipe) async {
     if (serverIp != null) {
+      var body = jsonEncode(<String, Object>{
+        "name": recipe.name,
+        "expected_servings": recipe.expectedServings,
+        "url": recipe.url,
+        "ingredients": recipe.ingredients
+            .map((ingredient) => <String, Object>{
+                  "id": ingredient.id ?? 0,
+                  "volume_type": ingredient.volumeType.toPrettyString(),
+                  "volume_quantity": ingredient.volumeQuantity,
+                  "store_ingredient": ingredient.storeIngredient?.id ?? 0,
+                })
+            .toList(),
+      });
       var res = await http
-          .post(Uri.parse("http://$serverIp/updates/recipe"),
-              headers: <String, String>{"Content-Type": "application/json", "User": user, "Id": recipe.id.toString()},
-              body: jsonEncode(<String, Object>{
-                "name": recipe.name,
-                "expected_servings": recipe.expectedServings,
-                "url": recipe.url,
-                "ingredients": recipe.ingredients
-                    .map((ingredient) => <String, Object>{
-                          "id": ingredient.id ?? 0,
-                          "volume_type": ingredient.volumeType.toPrettyString(),
-                          "volume_quantity": ingredient.volumeQuantity,
-                          "store_ingredient": ingredient.storeIngredient?.id ?? 0,
-                        })
-                    .toList(),
-              }))
+          .post(Uri.parse("$serverIp/updates/recipe"),
+              headers: <String, String>{
+                "Content-Type": "application/json",
+                "Content-Length": body.codeUnits.length.toString(),
+                "User": user,
+                "Id": recipe.id.toString(),
+              },
+              body: body)
           .timeout(const Duration(seconds: 5), onTimeout: () async {
         return http.Response("", 408);
       });
@@ -212,9 +221,10 @@ class Server {
   Future<void> attemptDeleteIngredient(StoreIngredient ingredient) async {
     if (serverIp != null) {
       var res = await http
-          .post(Uri.parse("http://$serverIp/updates/ingredient"),
+          .post(Uri.parse("$serverIp/updates/ingredient"),
               headers: <String, String>{
                 "Content-Type": "application/json",
+                "Content-Length": "2",
                 "User": user,
                 "Id": ingredient.id.toString(),
                 "Delete": "1"
@@ -233,9 +243,10 @@ class Server {
   Future<void> attemptDeleteRecipe(Recipe recipe) async {
     if (serverIp != null) {
       var res = await http
-          .post(Uri.parse("http://$serverIp/updates/recipe"),
+          .post(Uri.parse("$serverIp/updates/recipe"),
               headers: <String, String>{
                 "Content-Type": "application/json",
+                "Content-Length": "2",
                 "User": user,
                 "Id": recipe.id.toString(),
                 "Delete": "1"
@@ -255,9 +266,10 @@ class Server {
     if (serverIp != null && ingredient.id != null) {
       var res = await http
           .post(
-        Uri.parse("http://$serverIp/updates/image"),
+        Uri.parse("$serverIp/updates/image"),
         headers: <String, String>{
           "Content-Type": "image/png",
+          "Content-Length": ingredient.image.length.toString(),
           "Image-Type": "ingredient",
           "User": user,
           "Id": ingredient.id.toString()
@@ -283,9 +295,10 @@ class Server {
     if (serverIp != null && recipe.id != null) {
       var res = await http
           .post(
-        Uri.parse("http://$serverIp/updates/image"),
+        Uri.parse("$serverIp/updates/image"),
         headers: <String, String>{
           "Content-Type": "image/png",
+          "Content-Length": recipe.image.length.toString(),
           "Image-Type": "recipe",
           "User": user,
           "Id": recipe.id.toString()
