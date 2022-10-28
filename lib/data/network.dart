@@ -28,7 +28,8 @@ class Server {
     }
   }
 
-  Future<void> startup(RecipeDatabase database) async {
+  Future<void> startup(
+      RecipeDatabase database, List<StoreIngredient> initialIngredients, List<Recipe> initialRecipes) async {
     this.database = database;
     if (!kReleaseMode && serverIp == null) {
       // Scan for local IP of dev server on my LAN
@@ -40,6 +41,9 @@ class Server {
     }
     user = await getDeviceSpecificID();
     await attemptRegisterDevice();
+
+    // Handle remaining unsynced now
+    await handleUnsynced(initialIngredients, initialRecipes);
   }
 
   Future<void> handleUnsynced(List<StoreIngredient> ingredients, List<Recipe> recipes) async {

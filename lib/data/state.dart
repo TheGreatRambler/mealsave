@@ -17,6 +17,8 @@ import 'package:flutter/foundation.dart';
 import 'package:network_tools/network_tools.dart';
 import 'package:mealsave/data/network.dart';
 import 'package:mealsave/data/types.dart';
+import 'package:mealsave/data/mediastore.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 
 class CurrentState extends ChangeNotifier {
   final RecipeDatabase recipeDatabase = RecipeDatabase();
@@ -28,11 +30,14 @@ class CurrentState extends ChangeNotifier {
 
   Future<void> loadDatabase() async {
     if (!hasLoaded) {
-      await server.startup(recipeDatabase);
+      // Wait for database of recipes to open
       await recipeDatabase.open("recipes.db");
       ingredients = await recipeDatabase.getAllIngredients();
       recipes = await recipeDatabase.getAllRecipes(ingredients);
-      server.handleUnsynced(ingredients, recipes);
+
+      // Handle this async because it may take a long time
+      server.startup(recipeDatabase, ingredients, recipes);
+
       hasLoaded = true;
       notifyListeners();
     }
@@ -298,24 +303,19 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
   }
 
   Future<String?> getRecipeBackup(List<Recipe> recipes, [String? name]) async {
-    var canAccessExternalStorage = await Permission.storage.request().isGranted;
-    if (!canAccessExternalStorage) {
-      // Uh oh
-      return "";
-    }
+    // TODO this is no longer neccesary
+    //var canAccessExternalStorage = await Permission.storage.request().isGranted;
+    //if (!canAccessExternalStorage) {
+    //  // Uh oh
+    //  return "";
+    //}
 
     // Create new database for this backup
     // TODO: Certain charactors in the recipe name WILL NOT SAVE! (question marks are one)
     final DateFormat dateFormatter = DateFormat("yyyy-MM-dd-H-m-s");
     String databaseName = "mealsave-${name ?? recipes[0].name}-${dateFormatter.format(DateTime.now())}.mealsave";
 
-    // Start with the main downloads (Android)
-    var basePath = Directory("/storage/emulated/0/Download");
-    if (!await basePath.exists()) {
-      basePath = await getExternalStorageDirectory() ?? await getApplicationDocumentsDirectory();
-    }
-
-    await basePath.create(recursive: true);
+    Directory basePath = await getTemporaryDirectory();
     String databasePath = join(basePath.path, databaseName);
 
     var backupDb = await openDatabase(databasePath, version: 1, onConfigure: (Database backupDb) async {
@@ -398,11 +398,15 @@ CREATE TABLE IF NOT EXISTS store_ingredients (
       }
     });
 
-    // Database still can't be deleted immediately after being created
-    // Not sure why
     await backupDb.close();
 
-    return databasePath;
+    // Send to downloads folder
+    await MediaStore().addItem(databasePath, databaseName, "application/mealsave-backup");
+
+    // Delete the old file
+    await File(databasePath).delete();
+
+    return databaseName;
   }
 
   Future<BackupRecipe> loadBackupRecipe(File path) async {
